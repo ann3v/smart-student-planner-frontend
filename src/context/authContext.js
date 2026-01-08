@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/api';
 

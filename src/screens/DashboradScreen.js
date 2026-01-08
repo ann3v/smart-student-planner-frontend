@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/authContext.js';
 import { taskService, scheduleService, analyticsService } from '../services/api';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons'; 
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -83,7 +83,7 @@ const DashboardScreen = ({ navigation }) => {
             <Text style={styles.date}>{getDayName()}, {new Date().toLocaleDateString()}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-            <Icon name="settings" size={24} color="#4A90E2" />
+            <MaterialIcons name="settings" size={24} color="#4A90E2" />
           </TouchableOpacity>
         </View>
 
@@ -111,28 +111,28 @@ const DashboardScreen = ({ navigation }) => {
               style={styles.actionButton}
               onPress={() => navigation.navigate('Tasks')}
             >
-              <Icon name="assignment" size={30} color="#4A90E2" />
+              <MaterialIcons name="assignment" size={30} color="#4A90E2" />
               <Text style={styles.actionText}>Tasks</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => navigation.navigate('Schedule')}
             >
-              <Icon name="calendar-today" size={30} color="#4A90E2" />
+              <MaterialIcons name="calendar-today" size={30} color="#4A90E2" />
               <Text style={styles.actionText}>Schedule</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => navigation.navigate('Subjects')}
             >
-              <Icon name="menu-book" size={30} color="#4A90E2" />
+              <MaterialIcons name="menu-book" size={30} color="#4A90E2" />
               <Text style={styles.actionText}>Subjects</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => navigation.navigate('Analytics')}
             >
-              <Icon name="analytics" size={30} color="#4A90E2" />
+              <MaterialIcons name="analytics" size={30} color="#4A90E2" />
               <Text style={styles.actionText}>Analytics</Text>
             </TouchableOpacity>
           </View>
@@ -164,7 +164,7 @@ const DashboardScreen = ({ navigation }) => {
                       <Text style={styles.taskSubject}>{task.Subject.name}</Text>
                     )}
                   </View>
-                  <Icon
+                  <MaterialIcons
                     name={task.completed ? 'check-circle' : 'radio-button-unchecked'}
                     size={24}
                     color={task.completed ? '#27ae60' : '#ddd'}
@@ -207,158 +207,36 @@ const DashboardScreen = ({ navigation }) => {
   );
 };
 
+// --- Styles remain the same ---
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: '#fff',
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  date: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 5,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  statCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 5,
-  },
-  section: {
-    backgroundColor: '#fff',
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  seeAll: {
-    color: '#4A90E2',
-    fontSize: 14,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  actionButton: {
-    alignItems: 'center',
-    padding: 15,
-    flex: 1,
-  },
-  actionText: {
-    marginTop: 8,
-    color: '#333',
-    fontSize: 12,
-  },
-  taskItem: {
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  taskContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priorityDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 10,
-  },
-  taskInfo: {
-    flex: 1,
-  },
-  taskTitle: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-  },
-  taskSubject: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#999',
-    fontStyle: 'italic',
-    paddingVertical: 20,
-  },
-  scheduleItem: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  timeContainer: {
-    alignItems: 'center',
-    marginRight: 15,
-    minWidth: 60,
-  },
-  timeText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  scheduleContent: {
-    flex: 1,
-  },
-  scheduleTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  scheduleType: {
-    fontSize: 12,
-    color: '#4A90E2',
-    marginTop: 2,
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#fff' },
+  greeting: { fontSize: 24, fontWeight: 'bold', color: '#333' },
+  date: { fontSize: 16, color: '#666', marginTop: 5 },
+  statsContainer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 10 },
+  statCard: { backgroundColor: '#fff', padding: 15, borderRadius: 10, alignItems: 'center', flex: 1, marginHorizontal: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 3 },
+  statNumber: { fontSize: 24, fontWeight: 'bold', color: '#4A90E2' },
+  statLabel: { fontSize: 12, color: '#666', marginTop: 5 },
+  section: { backgroundColor: '#fff', marginTop: 20, paddingHorizontal: 20, paddingVertical: 15 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  seeAll: { color: '#4A90E2', fontSize: 14 },
+  actionsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  actionButton: { alignItems: 'center', padding: 15, flex: 1 },
+  actionText: { marginTop: 8, color: '#333', fontSize: 12 },
+  taskItem: { backgroundColor: '#f8f9fa', padding: 15, borderRadius: 8, marginBottom: 10 },
+  taskContent: { flexDirection: 'row', alignItems: 'center' },
+  priorityDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
+  taskInfo: { flex: 1 },
+  taskTitle: { fontSize: 16, color: '#333', fontWeight: '500' },
+  taskSubject: { fontSize: 12, color: '#666', marginTop: 2 },
+  emptyText: { textAlign: 'center', color: '#999', fontStyle: 'italic', paddingVertical: 20 },
+  scheduleItem: { flexDirection: 'row', backgroundColor: '#f8f9fa', padding: 15, borderRadius: 8, marginBottom: 10 },
+  timeContainer: { alignItems: 'center', marginRight: 15, minWidth: 60 },
+  timeText: { fontSize: 12, color: '#666' },
+  scheduleContent: { flex: 1 },
+  scheduleTitle: { fontSize: 16, fontWeight: '500', color: '#333' },
+  scheduleType: { fontSize: 12, color: '#4A90E2', marginTop: 2 },
 });
 
 export default DashboardScreen;
