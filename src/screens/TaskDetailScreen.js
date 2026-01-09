@@ -9,10 +9,12 @@ import {
   Alert,
   TextInput,
   Modal,
+  Platform,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { taskService, subjectService } from '../services/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
 
 const TaskDetailScreen = ({ route, navigation }) => {
   const { taskId } = route.params;
@@ -61,8 +63,9 @@ const TaskDetailScreen = ({ route, navigation }) => {
     try {
       await taskService.updateTask(taskId, editedTask);
       setIsEditing(false);
-      loadTask();
-      Alert.alert('Success', 'Task updated successfully');
+      Alert.alert('Success', 'Task updated successfully', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to update task');
     }
@@ -90,9 +93,10 @@ const TaskDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const formatDate = (dateString) => {
+  const formatDateLocal = (dateString) => {
     if (!dateString) return 'No due date';
-    const date = new Date(dateString);
+    const date = parseDate(dateString);
+    if (!date) return 'Invalid date';
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -300,7 +304,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
                 >
                   <Icon name="calendar-today" size={20} color="#4A90E2" />
                   <Text style={styles.dateTimeButtonText}>
-                    {editedTask.dueDate ? formatDate(editedTask.dueDate) : 'Select Date'}
+                    {editedTask.dueDate ? formatDateLocal(editedTask.dueDate) : 'Select Date'}
                   </Text>
                 </TouchableOpacity>
                 
@@ -316,19 +320,21 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
                 {showDatePicker && (
                   <DateTimePicker
-                    value={editedTask.dueDate ? new Date(editedTask.dueDate) : new Date()}
+                    value={editedTask.dueDate ? parseDate(editedTask.dueDate) : new Date()}
                     mode="date"
-                    display="default"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={handleDateChange}
+                    textColor="#333"
                   />
                 )}
 
                 {showTimePicker && (
                   <DateTimePicker
-                    value={editedTask.dueDate ? new Date(editedTask.dueDate) : new Date()}
+                    value={editedTask.dueDate ? parseDate(editedTask.dueDate) : new Date()}
                     mode="time"
-                    display="default"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={handleTimeChange}
+                    textColor="#333"
                   />
                 )}
               </View>
@@ -336,7 +342,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
               <View style={styles.dateTimeDisplay}>
                 <Icon name="calendar-today" size={20} color="#4A90E2" />
                 <Text style={styles.dateTimeText}>
-                  {task.dueDate ? formatDate(task.dueDate) : 'No due date'}
+                  {task.dueDate ? formatDateLocal(task.dueDate) : 'No due date'}
                 </Text>
                 {task.dueDate && (
                   <>
@@ -352,7 +358,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
           <View style={styles.detailSection}>
             <Text style={styles.detailLabel}>Created</Text>
             <Text style={styles.detailValue}>
-              {new Date(task.createdAt).toLocaleDateString()}
+              {formatDateLocal(task.createdAt)}
             </Text>
           </View>
 

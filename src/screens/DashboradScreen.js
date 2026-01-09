@@ -26,12 +26,31 @@ const DashboardScreen = ({ navigation }) => {
 
   const loadData = async () => {
     try {
+      console.log('Calling: /tasks/today');
+      console.log('Calling: /tasks/upcoming');
+      console.log('Calling: /schedule/today');
+      console.log('Calling: /analytics/productivity');
+      
       const [tasksRes, upcomingRes, scheduleRes, analyticsRes] = await Promise.all([
         taskService.getTodayTasks(),
         taskService.getUpcomingTasks(),
         scheduleService.getTodaySchedule(),
         analyticsService.getProductivityAnalytics(),
       ]);
+
+      console.log('✅ /tasks/today Response:', tasksRes.data);
+      console.log('✅ /tasks/upcoming Response:', upcomingRes.data);
+      console.log('✅ /schedule/today Response:', scheduleRes.data);
+      console.log('✅ /analytics/productivity Response:', analyticsRes.data);
+      
+      // Verify analytics structure
+      console.log('Analytics Structure Check:');
+      console.log('- tasksPerDay:', analyticsRes.data.tasksPerDay);
+      console.log('- completionRate:', analyticsRes.data.completionRate, '(should be a number, not NaN)');
+      console.log('- tasksByPriority:', analyticsRes.data.tasksByPriority);
+      console.log('- tasksBySubject:', analyticsRes.data.tasksBySubject);
+      console.log('- studyHoursPerDay:', analyticsRes.data.studyHoursPerDay);
+      console.log('- stats:', analyticsRes.data.stats);
 
       setTodayTasks(tasksRes.data);
       setUpcomingTasks(upcomingRes.data);
@@ -42,6 +61,9 @@ const DashboardScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      console.error('API Error Status:', error.response?.status);
+      console.error('API Error Data:', error.response?.data);
+      console.error('Error Message:', error.message);
     }
   };
 
@@ -80,7 +102,7 @@ const DashboardScreen = ({ navigation }) => {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Hello, {user?.name || 'Student'}!</Text>
-            <Text style={styles.date}>{getDayName()}, {new Date().toLocaleDateString()}</Text>
+            <Text style={styles.date}>{getDayName()}, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
             <MaterialIcons name="settings" size={24} color="#4A90E2" />

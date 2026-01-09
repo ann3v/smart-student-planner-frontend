@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,27 +9,42 @@ import {
   Modal,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { taskService, subjectService } from '../services/api';
+import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
 
 const TasksScreen = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [filter, setFilter] = useState('all'); // all, pending, completed
   const [modalVisible, setModalVisible] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
     subjectId: null,
     priority: 'medium',
-    dueDate: '',
+    dueDate: null,
   });
 
   useEffect(() => {
     loadTasks();
     loadSubjects();
   }, [filter]);
+
+  // Refresh tasks when screen comes into focus (e.g., after deleting a task)
+  useFocusEffect(
+    useCallback(() => {
+      loadTasks();
+    }, [filter])
+  );
 
   const loadTasks = async () => {
     try {
@@ -62,20 +77,56 @@ const TasksScreen = ({ navigation }) => {
     }
   };
 
+  const handleDateChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      // Convert to ISO string for consistent storage
+      setNewTask({...newTask, dueDate: selectedDate.toISOString()});
+    }
+    if (Platform.OS === 'ios' && event.type === 'set') {
+      setShowDatePicker(false);
+    }
+  };
+
   const handleCreateTask = async () => {
+    // Validation
+    if (!newTask.title.trim()) {
+      Alert.alert('Error', 'Please enter a task title');
+      return;
+    }
+
     try {
-      await taskService.createTask(newTask);
+      console.log('Creating task with data:', JSON.stringify(newTask, null, 2));
+      console.log('Task fields:', {
+        title: newTask.title,
+        description: newTask.description,
+        subjectId: newTask.subjectId,
+        priority: newTask.priority,
+        dueDate: newTask.dueDate,
+      });
+      
+      const response = await taskService.createTask(newTask);
+      console.log('Task created successfully:', response.data);
+      
       setModalVisible(false);
       setNewTask({
         title: '',
         description: '',
         subjectId: null,
         priority: 'medium',
-        dueDate: '',
+        dueDate: null,
       });
+      Keyboard.dismiss();
       loadTasks();
     } catch (error) {
-      Alert.alert('Error', 'Failed to create task');
+      console.error('Failed to create task:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      console.error('Error message:', error.message);
+      console.error('Full error:', JSON.stringify(error, null, 2));
+      Alert.alert('Error', error.response?.data?.error || 'Failed to create task');
     }
   };
 
@@ -119,7 +170,7 @@ const TasksScreen = ({ navigation }) => {
           
           {item.dueDate && (
             <Text style={styles.dueDate}>
-              {new Date(item.dueDate).toLocaleDateString()}
+              {formatDateShort(item.dueDate)}
             </Text>
           )}
         </View>
@@ -180,47 +231,120 @@ const TasksScreen = ({ navigation }) => {
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => {
+          Keyboard.dismiss();
+          setModalVisible(false);
+        }}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Task</Text>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Task Title"
-              value={newTask.title}
-              onChangeText={(text) => setNewTask({...newTask, title: text})}
-            />
-            
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Description (optional)"
-              value={newTask.description}
-              onChangeText={(text) => setNewTask({...newTask, description: text})}
-              multiline
-              numberOfLines={3}
-            />
-            
-            {/* Add more inputs for subject, priority, due date */}
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.createButton]}
-                onPress={handleCreateTask}
-              >
-                <Text style={styles.createButtonText}>Create</Text>
-              </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardView}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => {
+                    Keyboard.dismiss();
+                    setModalVisible(false);
+                  }}>
+                    <Icon name="close" size={28} color="#333" />
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Create New Task</Text>
+                  <View style={{ width: 28 }} />
+                </View>
+                
+                <TextInput
+                  style={styles.input}
+                  placeholder="Task Title *"
+                  placeholderTextColor="#999"
+                  value={newTask.title}
+                  onChangeText={(text) => setNewTask({...newTask, title: text})}
+                  editable={true}
+                />
+                
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Description (optional)"
+                  placeholderTextColor="#999"
+                  value={newTask.description}
+                  onChangeText={(text) => setNewTask({...newTask, description: text})}
+                  multiline
+                  numberOfLines={3}
+                />
+                
+                {/* Due Date Selector */}
+                <View style={styles.dueDateContainer}>
+                  <Text style={styles.label}>Due Date</Text>
+                  <TouchableOpacity
+                    style={styles.dueDateButton}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Icon name="calendar-today" size={20} color="#4A90E2" />
+                    <Text style={styles.dueDateButtonText}>
+                      {newTask.dueDate 
+                        ? formatDate(newTask.dueDate)
+                        : 'Select a date (optional)'
+                      }
+                    </Text>
+                  </TouchableOpacity>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={newTask.dueDate ? parseDate(newTask.dueDate) : new Date()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleDateChange}
+                      textColor="#333"
+                    />
+                  )}
+                </View>
+                
+                {/* Priority Selector */}
+                <View style={styles.priorityContainer}>
+                  <Text style={styles.label}>Priority</Text>
+                  <View style={styles.priorityOptions}>
+                    {['low', 'medium', 'high'].map((p) => (
+                      <TouchableOpacity
+                        key={p}
+                        style={[
+                          styles.priorityButton,
+                          newTask.priority === p && styles.priorityButtonActive
+                        ]}
+                        onPress={() => setNewTask({...newTask, priority: p})}
+                      >
+                        <Text style={[
+                          styles.priorityButtonText,
+                          newTask.priority === p && styles.priorityButtonTextActive
+                        ]}>
+                          {p.charAt(0).toUpperCase() + p.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.createButton]}
+                    onPress={handleCreateTask}
+                  >
+                    <Text style={styles.createButtonText}>Create</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );
@@ -355,33 +479,96 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  keyboardView: {
+    flex: 1,
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
     padding: 20,
-    width: '90%',
-    maxWidth: 400,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
     color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+  },
+  priorityContainer: {
+    marginBottom: 20,
+  },
+  priorityOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  priorityButton: {
+    flex: 1,
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  priorityButtonActive: {
+    borderColor: '#4A90E2',
+    backgroundColor: '#4A90E2',
+  },
+  priorityButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    textTransform: 'capitalize',
+  },
+  priorityButtonTextActive: {
+    color: '#fff',
+  },
+  dueDateContainer: {
+    marginBottom: 20,
+  },
+  dueDateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#f9f9f9',
+  },
+  dueDateButtonText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 12,
     marginBottom: 15,
     fontSize: 16,
+    color: '#333',
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
   },
   modalButtons: {
@@ -391,8 +578,8 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    paddingVertical: 12,
+    borderRadius: 8,
     marginLeft: 10,
   },
   cancelButton: {
@@ -400,6 +587,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: '#666',
+    fontWeight: '600',
   },
   createButton: {
     backgroundColor: '#4A90E2',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   LineChart,
   PieChart,
@@ -17,6 +18,7 @@ import {
 } from 'react-native-chart-kit';
 import { analyticsService } from '../services/api';
 import moment from 'moment';
+import { formatDateShort } from '../utils/dateUtils';
 
 const AnalyticsScreen = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -30,6 +32,13 @@ const AnalyticsScreen = () => {
   useEffect(() => {
     loadAnalytics();
   }, [timeRange]);
+
+  // Refresh analytics when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadAnalytics();
+    }, [timeRange])
+  );
 
   const loadAnalytics = async () => {
     try {
@@ -80,12 +89,23 @@ const AnalyticsScreen = () => {
   };
 
   const prepareProductivityData = () => {
-    if (!analytics?.tasksPerDay) return null;
+    if (!analytics?.tasksPerDay || analytics.tasksPerDay.length === 0) {
+      return null;
+    }
 
     const labels = analytics.tasksPerDay.map(item =>
       moment(item.date).format('MMM D')
     );
-    const data = analytics.tasksPerDay.map(item => item.count);
+    const data = analytics.tasksPerDay.map(item => {
+      const val = item.count;
+      // Prevent NaN and Infinity
+      return isFinite(val) ? val : 0;
+    });
+
+    // Only return chart data if we have valid data
+    if (!data.some(d => d > 0)) {
+      return null;
+    }
 
     return {
       labels,
@@ -100,28 +120,40 @@ const AnalyticsScreen = () => {
   };
 
   const prepareSubjectDistributionData = () => {
-    if (!analytics?.tasksBySubject) return null;
+    if (!analytics?.tasksBySubject || analytics.tasksBySubject.length === 0) {
+      return null;
+    }
 
-    const data = analytics.tasksBySubject.map((item, index) => ({
-      name: item.subjectName,
-      count: item.count,
-      color: item.subjectColor || getColorByIndex(index),
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 12,
-    }));
+    const data = analytics.tasksBySubject
+      .map((item, index) => ({
+        name: item.subjectName,
+        count: isFinite(item.count) ? Math.max(item.count, 0) : 0,
+        color: item.subjectColor || getColorByIndex(index),
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 12,
+      }))
+      .filter(item => item.count > 0);
 
-    return data;
+    return data.length > 0 ? data : null;
   };
 
   const prepareStudyHoursData = () => {
-    if (!analytics?.studyHoursPerDay) return null;
+    if (!analytics?.studyHoursPerDay || analytics.studyHoursPerDay.length === 0) {
+      return null;
+    }
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const data = new Array(7).fill(0);
 
     analytics.studyHoursPerDay.forEach(item => {
-      data[item.dayOfWeek] = parseFloat(item.hours) || 0;
+      const hours = parseFloat(item.hours) || 0;
+      data[item.dayOfWeek] = isFinite(hours) ? hours : 0;
     });
+
+    // Only return chart data if we have valid data
+    if (!data.some(d => d > 0)) {
+      return null;
+    }
 
     return {
       labels: days,
@@ -202,25 +234,43 @@ const AnalyticsScreen = () => {
     );
   };
 
-  const renderCompletionRate = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Completion Rate</Text>
-      <View style={styles.completionRateContainer}>
-        <View style={styles.completionCircle}>
-          <Text style={styles.completionRateText}>
-            {analytics?.completionRate || 0}%
+  const renderCompletionRate = () => {
+    const rate = analytics?.completionRate || 0;
+    // Prevent NaN, Infinity from displaying
+    const displayRate = isFinite(rate) ? rate : 0;
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Completion Rate</Text>
+        <View style={styles.completionRateContainer}>
+          <View style={styles.completionCircle}>
+            <Text style={styles.completionRateText}>
+              {displayRate}%
+            </Text>
+          </View>
+          <Text style={styles.completionLabel}>
+            of tasks completed in the last {timeRange}
           </Text>
         </View>
-        <Text style={styles.completionLabel}>
-          of tasks completed in the last {timeRange}
-        </Text>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderProductivityChart = () => {
     const data = prepareProductivityData();
-    if (!data) return null;
+    
+    if (!data) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Daily Productivity</Text>
+          <View style={styles.emptyStateContainer}>
+            <Icon name="show-chart" size={48} color="#ccc" />
+            <Text style={styles.emptyStateText}>No productivity data available</Text>
+            <Text style={styles.emptyStateSubtext}>Create some tasks to see your productivity trends</Text>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.section}>
@@ -254,7 +304,19 @@ const AnalyticsScreen = () => {
 
   const renderSubjectDistribution = () => {
     const data = prepareSubjectDistributionData();
-    if (!data || data.length === 0) return null;
+    
+    if (!data || data.length === 0) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tasks by Subject</Text>
+          <View style={styles.emptyStateContainer}>
+            <Icon name="book" size={48} color="#ccc" />
+            <Text style={styles.emptyStateText}>No subject data available</Text>
+            <Text style={styles.emptyStateSubtext}>Add subjects and tasks to see distribution</Text>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.section}>
@@ -355,7 +417,7 @@ const AnalyticsScreen = () => {
             <View style={styles.overdueTaskInfo}>
               <Text style={styles.overdueTaskTitle}>{task.title}</Text>
               <Text style={styles.overdueTaskDate}>
-                Due: {new Date(task.dueDate).toLocaleDateString()}
+                Due: {formatDateShort(task.dueDate)}
               </Text>
             </View>
           </View>
@@ -645,11 +707,26 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
   },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+  },
   emptyStateText: {
     fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 16,
+    fontWeight: '500',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
     color: '#999',
     textAlign: 'center',
-    paddingHorizontal: 40,
+    marginTop: 8,
+    paddingHorizontal: 20,
   },
 });
 
