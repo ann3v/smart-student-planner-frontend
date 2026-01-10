@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext.js';
+import { useTheme } from '../context/ThemeContext';
 
 const RegisterScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -72,7 +74,7 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -83,20 +85,21 @@ const RegisterScreen = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" size={24} color="#4A90E2" />
+            <Icon name="arrow-back" size={24} color={theme.primary} />
           </TouchableOpacity>
 
           <View style={styles.content}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join Smart Student Planner today</Text>
+            <Text style={[styles.title, { color: theme.primary }]}>Create Account</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Join Smart Student Planner today</Text>
 
             <View style={styles.form}>
               {/* Name Input */}
-              <View style={styles.inputContainer}>
-                <Icon name="person" size={20} color="#666" style={styles.inputIcon} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                <Icon name="person" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Full Name"
+                  placeholderTextColor={theme.textTertiary}
                   value={formData.name}
                   onChangeText={(text) => setFormData({ ...formData, name: text })}
                   editable={!isLoading}
@@ -104,11 +107,12 @@ const RegisterScreen = ({ navigation }) => {
               </View>
 
               {/* Email Input */}
-              <View style={styles.inputContainer}>
-                <Icon name="email" size={20} color="#666" style={styles.inputIcon} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                <Icon name="email" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Email Address"
+                  placeholderTextColor={theme.textTertiary}
                   value={formData.email}
                   onChangeText={(text) => setFormData({ ...formData, email: text })}
                   autoCapitalize="none"
@@ -118,11 +122,12 @@ const RegisterScreen = ({ navigation }) => {
               </View>
 
               {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <Icon name="lock" size={20} color="#666" style={styles.inputIcon} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                <Icon name="lock" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, styles.passwordInput]}
+                  style={[styles.input, styles.passwordInput, { color: theme.text }]}
                   placeholder="Password"
+                  placeholderTextColor={theme.textTertiary}
                   value={formData.password}
                   onChangeText={(text) => setFormData({ ...formData, password: text })}
                   secureTextEntry={!showPassword}
@@ -135,17 +140,18 @@ const RegisterScreen = ({ navigation }) => {
                   <Icon
                     name={showPassword ? 'visibility' : 'visibility-off'}
                     size={20}
-                    color="#666"
+                    color={theme.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
 
               {/* Confirm Password Input */}
-              <View style={styles.inputContainer}>
-                <Icon name="lock-outline" size={20} color="#666" style={styles.inputIcon} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                <Icon name="lock-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, styles.passwordInput]}
+                  style={[styles.input, styles.passwordInput, { color: theme.text }]}
                   placeholder="Confirm Password"
+                  placeholderTextColor={theme.textTertiary}
                   value={formData.confirmPassword}
                   onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
                   secureTextEntry={!showConfirmPassword}

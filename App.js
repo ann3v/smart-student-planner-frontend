@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/context/authContext.js';
+import { ThemeProvider } from './src/context/ThemeContext.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import notificationService from './src/services/notificationService.js';
 
 // Import screens
 import LoginScreen from './src/screens/LoginScreen.js';
@@ -90,6 +93,53 @@ function AppContent() {
   const [userToken, setUserToken] = useState(null);
   const { user } = useAuth();
   const navigationRef = useRef(null);
+  const notificationListener = useRef();
+  const responseListener = useRef();
+
+  useEffect(() => {
+    // Request notification permissions and setup listeners
+    const setupNotifications = async () => {
+      try {
+        // Request permissions
+        await notificationService.requestPermissions();
+
+        // Set up notification event listeners
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+          console.log('Notification received:', notification);
+          // Handle notification received while app is in foreground
+        });
+
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+          console.log('Notification response:', response);
+          const data = response.notification.request.content.data;
+
+          // Navigate to relevant screen based on notification type
+          if (data.type === 'task-reminder' && data.taskId) {
+            navigationRef.current?.navigate('TaskDetail', { taskId: data.taskId });
+          } else if (data.type === 'schedule-reminder' && data.scheduleId) {
+            navigationRef.current?.navigate('MainTabs', {
+              screen: 'Schedule',
+              params: { scheduleId: data.scheduleId }
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error setting up notifications:', error);
+      }
+    };
+
+    setupNotifications();
+
+    // Cleanup listeners
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Check if user is logged in
@@ -135,8 +185,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,18 @@ import {
   TextInput,
   Modal,
   Platform,
+  Switch,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { taskService, subjectService } from '../services/api';
+import notificationService from '../services/notificationService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
+import { useTheme } from '../context/ThemeContext';
 
 const TaskDetailScreen = ({ route, navigation }) => {
+  const { theme } = useTheme();
   const { taskId } = route.params;
   const [task, setTask] = useState(null);
   const [subjects, setSubjects] = useState([]);
@@ -24,11 +29,32 @@ const TaskDetailScreen = ({ route, navigation }) => {
   const [editedTask, setEditedTask] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [taskReminders, setTaskReminders] = useState([]);
+  const [reminderMinutes, setReminderMinutes] = useState('30');
+
+  const REMINDER_OPTIONS = [
+    { label: '5 minutes', value: 5 },
+    { label: '15 minutes', value: 15 },
+    { label: '30 minutes', value: 30 },
+    { label: '1 hour', value: 60 },
+    { label: '1 day', value: 1440 },
+    { label: 'Custom', value: 'custom' }
+  ];
 
   useEffect(() => {
     loadTask();
     loadSubjects();
+    loadTaskReminders();
   }, []);
+
+  // Refresh task details and reminders when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadTask();
+      loadTaskReminders();
+    }, [taskId])
+  );
 
   const loadTask = async () => {
     try {
@@ -50,6 +76,15 @@ const TaskDetailScreen = ({ route, navigation }) => {
     }
   };
 
+  const loadTaskReminders = async () => {
+    try {
+      const reminders = await notificationService.getTaskReminders(taskId);
+      setTaskReminders(reminders);
+    } catch (error) {
+      console.error('Failed to load reminders:', error);
+    }
+  };
+
   const handleToggleCompletion = async () => {
     try {
       await taskService.toggleTaskCompletion(taskId);
@@ -68,6 +103,44 @@ const TaskDetailScreen = ({ route, navigation }) => {
       ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to update task');
+    }
+  };
+
+  const handleScheduleReminder = async (minutes) => {
+    try {
+      if (!task.dueDate) {
+        Alert.alert('Error', 'Please set a due date before scheduling a reminder');
+        return;
+      }
+
+      const notificationId = await notificationService.scheduleTaskReminder(
+        taskId,
+        task.title,
+        new Date(task.dueDate),
+        minutes,
+        task.description
+      );
+
+      if (notificationId) {
+        await loadTaskReminders();
+        setShowReminderModal(false);
+        Alert.alert('Success', `Reminder scheduled for ${minutes} minutes before deadline`);
+      } else {
+        Alert.alert('Error', 'Failed to schedule reminder');
+      }
+    } catch (error) {
+      console.error('Error scheduling reminder:', error);
+      Alert.alert('Error', 'Failed to schedule reminder');
+    }
+  };
+
+  const handleCancelReminder = async (reminderId) => {
+    try {
+      await notificationService.cancelReminder(reminderId);
+      await loadTaskReminders();
+      Alert.alert('Success', 'Reminder cancelled');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to cancel reminder');
     }
   };
 
@@ -156,29 +229,29 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
   if (!task) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.loadingContainer}>
-          <Text>Loading task details...</Text>
+          <Text style={{ color: theme.text }}>Loading task details...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color="#4A90E2" />
+            <Icon name="arrow-back" size={24} color={theme.primary} />
           </TouchableOpacity>
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.editButton}
               onPress={() => setIsEditing(!isEditing)}
             >
-              <Icon name={isEditing ? 'close' : 'edit'} size={20} color="#4A90E2" />
-              <Text style={styles.editButtonText}>
+              <Icon name={isEditing ? 'close' : 'edit'} size={20} color={theme.primary} />
+              <Text style={[styles.editButtonText, { color: theme.primary }]}>
                 {isEditing ? 'Cancel' : 'Edit'}
               </Text>
             </TouchableOpacity>
@@ -189,16 +262,17 @@ const TaskDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Task Title */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
           {isEditing ? (
             <TextInput
-              style={styles.titleInput}
+              style={[styles.titleInput, { color: theme.text, borderColor: theme.border }]}
+              placeholder="Task title"
+              placeholderTextColor={theme.textTertiary}
               value={editedTask.title}
               onChangeText={(text) => setEditedTask({ ...editedTask, title: text })}
-              placeholder="Task title"
             />
           ) : (
-            <Text style={styles.title}>{task.title}</Text>
+            <Text style={[styles.title, { color: theme.text }]}>{task.title}</Text>
           )}
           
           <TouchableOpacity
@@ -385,6 +459,98 @@ const TaskDetailScreen = ({ route, navigation }) => {
                 {task.estimatedDuration ? `${task.estimatedDuration} minutes` : 'Not specified'}
               </Text>
             )}
+          </View>
+
+          {/* Reminders Section */}
+          <View style={styles.detailSection}>
+            <View style={styles.reminderHeader}>
+              <Text style={styles.detailLabel}>Reminders</Text>
+              <TouchableOpacity
+                style={styles.addReminderButton}
+                onPress={() => setShowReminderModal(true)}
+              >
+                <Icon name="add-circle" size={20} color="#4A90E2" />
+                <Text style={styles.addReminderText}>Add Reminder</Text>
+              </TouchableOpacity>
+            </View>
+
+            {taskReminders.length > 0 ? (
+              <View style={styles.remindersList}>
+                {taskReminders.map((reminder) => (
+                  <View key={reminder.id} style={styles.reminderItem}>
+                    <View style={styles.reminderInfo}>
+                      <Icon name="notifications-active" size={18} color="#4A90E2" />
+                      <View style={styles.reminderDetails}>
+                        <Text style={styles.reminderText}>
+                          {reminder.minutesBefore} minutes before deadline
+                        </Text>
+                        <Text style={styles.reminderTime}>
+                          Scheduled at {new Date(reminder.scheduledAt).toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleCancelReminder(reminder.id)}
+                      style={styles.cancelReminderButton}
+                    >
+                      <Icon name="close" size={20} color="#e74c3c" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noRemindersText}>No reminders set</Text>
+            )}
+
+            {/* Reminder Modal */}
+            <Modal
+              visible={showReminderModal}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setShowReminderModal(false)}
+            >
+              <View style={styles.reminderModalOverlay}>
+                <View style={styles.reminderModalContent}>
+                  <View style={styles.reminderModalHeader}>
+                    <Text style={styles.reminderModalTitle}>Set a Reminder</Text>
+                    <TouchableOpacity onPress={() => setShowReminderModal(false)}>
+                      <Icon name="close" size={24} color="#333" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.reminderModalSubtitle}>
+                    Choose when to be reminded before the deadline:
+                  </Text>
+
+                  <View style={styles.reminderOptionsContainer}>
+                    {REMINDER_OPTIONS.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={styles.reminderOption}
+                        onPress={() => {
+                          if (option.value === 'custom') {
+                            // Handle custom reminder
+                            setShowReminderModal(false);
+                          } else {
+                            handleScheduleReminder(option.value);
+                          }
+                        }}
+                      >
+                        <Icon name="schedule" size={24} color="#4A90E2" />
+                        <Text style={styles.reminderOptionText}>{option.label}</Text>
+                        <Icon name="chevron-right" size={20} color="#999" />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {!task.dueDate && (
+                    <Text style={styles.dueDataWarning}>
+                      ⚠️ Please set a due date to schedule reminders
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </Modal>
           </View>
         </View>
 
@@ -641,6 +807,124 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  reminderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addReminderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f0f7ff',
+    borderRadius: 6,
+  },
+  addReminderText: {
+    marginLeft: 6,
+    color: '#4A90E2',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  remindersList: {
+    gap: 10,
+  },
+  reminderItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4A90E2',
+  },
+  reminderInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+    gap: 10,
+  },
+  reminderDetails: {
+    flex: 1,
+  },
+  reminderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  reminderTime: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+  },
+  cancelReminderButton: {
+    padding: 8,
+  },
+  noRemindersText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+    paddingVertical: 8,
+  },
+  reminderModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  reminderModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+    maxHeight: '80%',
+  },
+  reminderModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  reminderModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  reminderModalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+  },
+  reminderOptionsContainer: {
+    gap: 12,
+  },
+  reminderOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  reminderOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  dueDataWarning: {
+    fontSize: 12,
+    color: '#e74c3c',
+    marginTop: 16,
+    textAlign: 'center',
+    padding: 12,
+    backgroundColor: '#ffe6e6',
+    borderRadius: 6,
   },
 });
 

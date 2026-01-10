@@ -11,8 +11,10 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../context/authContext.js';
+import { useTheme } from '../context/ThemeContext';
 
 const LoginScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAuth();
@@ -32,19 +34,20 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Smart Student Planner</Text>
-          <Text style={styles.subtitle}>Login to continue</Text>
+          <Text style={[styles.title, { color: theme.primary }]}>Smart Student Planner</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Login to continue</Text>
 
           <View style={styles.form}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
               placeholder="Email"
+              placeholderTextColor={theme.textTertiary}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -53,8 +56,9 @@ const LoginScreen = ({ navigation }) => {
             />
             
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
               placeholder="Password"
+              placeholderTextColor={theme.textTertiary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -72,7 +76,7 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Text style={[styles.footerText, { color: theme.textSecondary }]}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                 <Text style={styles.linkText}>Sign up</Text>
               </TouchableOpacity>

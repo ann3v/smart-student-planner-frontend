@@ -14,10 +14,13 @@ import {
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/authContext.js';
+import { useTheme } from '../context/ThemeContext.js';
 import { authService } from '../services/api';
+import notificationService from '../services/notificationService';
 
 const SettingsScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
+  const { theme, isDark, themeMode, setTheme } = useTheme();
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: false,
@@ -25,8 +28,11 @@ const SettingsScreen = ({ navigation }) => {
     taskReminders: true,
     studyReminders: true,
   });
+  const [notificationSettings, setNotificationSettings] = useState(null);
+  const [remindersCount, setRemindersCount] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showRemindersModal, setShowRemindersModal] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -39,6 +45,7 @@ const SettingsScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadSettings();
+    loadNotificationSettings();
   }, []);
 
   const loadSettings = async () => {
@@ -49,6 +56,18 @@ const SettingsScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
+    }
+  };
+
+  const loadNotificationSettings = async () => {
+    try {
+      const notifSettings = await notificationService.getNotificationSettings();
+      setNotificationSettings(notifSettings);
+      
+      const count = await notificationService.getRemindersCount();
+      setRemindersCount(count);
+    } catch (error) {
+      console.error('Failed to load notification settings:', error);
     }
   };
 
@@ -161,10 +180,10 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const renderSettingItem = (icon, label, value, onToggle) => (
-    <View style={styles.settingItem}>
+    <View style={[styles.settingItem, { borderBottomColor: theme.borderLight }]}>
       <View style={styles.settingLeft}>
         <Icon name={icon} size={24} color="#4A90E2" />
-        <Text style={styles.settingLabel}>{label}</Text>
+        <Text style={[styles.settingLabel, { color: theme.text }]}>{label}</Text>
       </View>
       <Switch
         value={value}
@@ -176,20 +195,20 @@ const SettingsScreen = ({ navigation }) => {
   );
 
   const renderActionItem = (icon, label, onPress, color = '#333', showArrow = true) => (
-    <TouchableOpacity style={styles.actionItem} onPress={onPress}>
+    <TouchableOpacity style={[styles.actionItem, { borderBottomColor: theme.borderLight }]} onPress={onPress}>
       <View style={styles.actionLeft}>
         <Icon name={icon} size={24} color={color} />
-        <Text style={[styles.actionLabel, { color }]}>{label}</Text>
+        <Text style={[styles.actionLabel, { color: isDark ? (color === '#333' ? theme.text : color) : color }]}>{label}</Text>
       </View>
-      {showArrow && <Icon name="chevron-right" size={24} color="#ddd" />}
+      {showArrow && <Icon name="chevron-right" size={24} color={theme.textTertiary} />}
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
         {/* Profile Section */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
@@ -197,8 +216,8 @@ const SettingsScreen = ({ navigation }) => {
               </Text>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{user?.name || 'User'}</Text>
-              <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+              <Text style={[styles.profileName, { color: theme.text }]}>{user?.name || 'User'}</Text>
+              <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>{user?.email || 'user@example.com'}</Text>
               <TouchableOpacity
                 style={styles.editProfileButton}
                 onPress={() => {
@@ -216,8 +235,8 @@ const SettingsScreen = ({ navigation }) => {
         </View>
 
         {/* Notification Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.border }]}>Notifications</Text>
           {renderSettingItem(
             'notifications',
             'Push Notifications',
@@ -244,20 +263,82 @@ const SettingsScreen = ({ navigation }) => {
           )}
         </View>
 
+        {/* Reminders Management */}
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <View style={styles.remindersHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.border }]}>Active Reminders</Text>
+            <TouchableOpacity
+              style={styles.remindersCount}
+              onPress={() => setShowRemindersModal(true)}
+            >
+              <Icon name="schedule" size={16} color="#fff" />
+              <Text style={styles.remindersCountText}>{remindersCount}</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.viewRemindersButton}
+            onPress={() => setShowRemindersModal(true)}
+          >
+            <Icon name="notifications-active" size={20} color="#4A90E2" />
+            <Text style={styles.viewRemindersButtonText}>
+              View & Manage Reminders
+            </Text>
+            <Icon name="chevron-right" size={20} color="#ddd" />
+          </TouchableOpacity>
+        </View>
+
         {/* Appearance */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-          {renderSettingItem(
-            'dark-mode',
-            'Dark Mode',
-            settings.darkMode,
-            () => handleToggleSetting('darkMode')
-          )}
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Appearance</Text>
+          <View style={styles.themeSelector}>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder },
+                themeMode === 'light' && styles.themeOptionSelected
+              ]}
+              onPress={() => setTheme('light')}
+            >
+              <Icon name="wb-sunny" size={24} color={themeMode === 'light' ? '#4A90E2' : theme.textSecondary} />
+              <Text style={[
+                styles.themeOptionText,
+                { color: themeMode === 'light' ? '#4A90E2' : theme.textSecondary }
+              ]}>Light</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder },
+                themeMode === 'dark' && styles.themeOptionSelected
+              ]}
+              onPress={() => setTheme('dark')}
+            >
+              <Icon name="nightlight-round" size={24} color={themeMode === 'dark' ? '#4A90E2' : theme.textSecondary} />
+              <Text style={[
+                styles.themeOptionText,
+                { color: themeMode === 'dark' ? '#4A90E2' : theme.textSecondary }
+              ]}>Dark</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder },
+                themeMode === 'system' && styles.themeOptionSelected
+              ]}
+              onPress={() => setTheme('system')}
+            >
+              <Icon name="phone-android" size={24} color={themeMode === 'system' ? '#4A90E2' : theme.textSecondary} />
+              <Text style={[
+                styles.themeOptionText,
+                { color: themeMode === 'system' ? '#4A90E2' : theme.textSecondary }
+              ]}>System</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Account Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.border }]}>Account</Text>
           {renderActionItem(
             'vpn-key',
             'Change Password',
@@ -279,8 +360,8 @@ const SettingsScreen = ({ navigation }) => {
         </View>
 
         {/* Danger Zone */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, styles.dangerTitle]}>Danger Zone</Text>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, styles.dangerTitle, { borderBottomColor: theme.border }]}>Danger Zone</Text>
           {renderActionItem(
             'delete',
             'Clear All Data',
@@ -306,9 +387,9 @@ const SettingsScreen = ({ navigation }) => {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appName}>Smart Student Planner</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appCopyright}>© 2024 UMIB Students</Text>
+          <Text style={[styles.appName, { color: theme.text }]}>Smart Student Planner</Text>
+          <Text style={[styles.appVersion, { color: theme.textSecondary }]}>Version 1.0.0</Text>
+          <Text style={[styles.appCopyright, { color: theme.textTertiary }]}>© 2024 UMIB Students</Text>
         </View>
       </ScrollView>
 
@@ -428,6 +509,50 @@ const SettingsScreen = ({ navigation }) => {
                 <Text style={styles.saveButtonText}>Change Password</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reminders Management Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showRemindersModal}
+        onRequestClose={() => setShowRemindersModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.remindersModalHeader}>
+              <Text style={styles.modalTitle}>Active Reminders</Text>
+              <TouchableOpacity onPress={() => setShowRemindersModal(false)}>
+                <Icon name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {remindersCount > 0 ? (
+              <ScrollView style={styles.remindersList}>
+                <Text style={styles.remindersInfo}>
+                  You have {remindersCount} active reminders set
+                </Text>
+              </ScrollView>
+            ) : (
+              <View style={styles.noRemindersContainer}>
+                <Icon name="notifications-off" size={48} color="#ddd" />
+                <Text style={styles.noRemindersText}>
+                  No active reminders
+                </Text>
+                <Text style={styles.noRemindersSubtext}>
+                  Add reminders to your tasks and scheduled sessions to stay on track
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.remindersModalButton}
+              onPress={() => setShowRemindersModal(false)}
+            >
+              <Text style={styles.remindersModalButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -621,6 +746,111 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  remindersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  remindersCount: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  remindersCountText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  viewRemindersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#f0f7ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d0e8ff',
+  },
+  viewRemindersButtonText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  remindersModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  remindersList: {
+    maxHeight: 300,
+    marginBottom: 20,
+  },
+  remindersInfo: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  noRemindersContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  noRemindersText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 12,
+  },
+  noRemindersSubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+    marginHorizontal: 20,
+  },
+  remindersModalButton: {
+    backgroundColor: '#4A90E2',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  remindersModalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  themeSelector: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  themeOption: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  themeOptionSelected: {
+    borderColor: '#4A90E2',
+    backgroundColor: '#f0f7ff',
+  },
+  themeOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

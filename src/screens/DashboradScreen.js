@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,15 @@ import {
   SafeAreaView,
   RefreshControl,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/authContext.js';
+import { useTheme } from '../context/ThemeContext.js';
 import { taskService, scheduleService, analyticsService } from '../services/api';
 import { MaterialIcons } from '@expo/vector-icons'; 
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [todayTasks, setTodayTasks] = useState([]);
   const [upcomingTasks, setUpcomingTasks] = useState([]);
@@ -71,6 +74,13 @@ const DashboardScreen = ({ navigation }) => {
     loadData();
   }, []);
 
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadData();
@@ -92,17 +102,17 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
           <View>
-            <Text style={styles.greeting}>Hello, {user?.name || 'Student'}!</Text>
-            <Text style={styles.date}>{getDayName()}, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+            <Text style={[styles.greeting, { color: theme.text }]}>Hello, {user?.name || 'Student'}!</Text>
+            <Text style={[styles.date, { color: theme.textSecondary }]}>{getDayName()}, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
             <MaterialIcons name="settings" size={24} color="#4A90E2" />
@@ -111,51 +121,51 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalTasks}</Text>
-            <Text style={styles.statLabel}>Total Tasks</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats.totalTasks}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Tasks</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.completedTasks}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.statNumber, { color: theme.success }]}>{stats.completedTasks}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.pendingTasks}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.statNumber, { color: theme.warning }]}>{stats.pendingTasks}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
           </View>
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
             <TouchableOpacity 
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
               onPress={() => navigation.navigate('Tasks')}
             >
               <MaterialIcons name="assignment" size={30} color="#4A90E2" />
-              <Text style={styles.actionText}>Tasks</Text>
+              <Text style={[styles.actionText, { color: theme.text }]}>Tasks</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
               onPress={() => navigation.navigate('Schedule')}
             >
               <MaterialIcons name="calendar-today" size={30} color="#4A90E2" />
-              <Text style={styles.actionText}>Schedule</Text>
+              <Text style={[styles.actionText, { color: theme.text }]}>Schedule</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
               onPress={() => navigation.navigate('Subjects')}
             >
               <MaterialIcons name="menu-book" size={30} color="#4A90E2" />
-              <Text style={styles.actionText}>Subjects</Text>
+              <Text style={[styles.actionText, { color: theme.text }]}>Subjects</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
               onPress={() => navigation.navigate('Analytics')}
             >
               <MaterialIcons name="analytics" size={30} color="#4A90E2" />
-              <Text style={styles.actionText}>Analytics</Text>
+              <Text style={[styles.actionText, { color: theme.text }]}>Analytics</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -163,27 +173,27 @@ const DashboardScreen = ({ navigation }) => {
         {/* Today's Tasks */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Tasks</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Tasks</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Tasks')}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
           
           {todayTasks.length === 0 ? (
-            <Text style={styles.emptyText}>No tasks for today</Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tasks for today</Text>
           ) : (
             todayTasks.slice(0, 3).map(task => (
               <TouchableOpacity
                 key={task.id}
-                style={styles.taskItem}
+                style={[styles.taskItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
                 onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
               >
                 <View style={styles.taskContent}>
                   <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
                   <View style={styles.taskInfo}>
-                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    <Text style={[styles.taskTitle, { color: theme.text }]}>{task.title}</Text>
                     {task.Subject && (
-                      <Text style={styles.taskSubject}>{task.Subject.name}</Text>
+                      <Text style={[styles.taskSubject, { color: theme.textSecondary }]}>{task.Subject.name}</Text>
                     )}
                   </View>
                   <MaterialIcons
@@ -200,25 +210,25 @@ const DashboardScreen = ({ navigation }) => {
         {/* Today's Schedule */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Schedule</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Schedule</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Schedule')}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
           
           {todaySchedule.length === 0 ? (
-            <Text style={styles.emptyText}>No schedule for today</Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No schedule for today</Text>
           ) : (
             todaySchedule.slice(0, 3).map(item => (
-              <View key={item.id} style={styles.scheduleItem}>
+              <View key={item.id} style={[styles.scheduleItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                 <View style={styles.timeContainer}>
-                  <Text style={styles.timeText}>{item.startTime}</Text>
-                  <Text style={styles.timeText}>to</Text>
-                  <Text style={styles.timeText}>{item.endTime}</Text>
+                  <Text style={[styles.timeText, { color: theme.primary }]}>{item.startTime}</Text>
+                  <Text style={[styles.timeText, { color: theme.textTertiary }]}>to</Text>
+                  <Text style={[styles.timeText, { color: theme.primary }]}>{item.endTime}</Text>
                 </View>
                 <View style={styles.scheduleContent}>
-                  <Text style={styles.scheduleTitle}>{item.title}</Text>
-                  <Text style={styles.scheduleType}>{item.activityType}</Text>
+                  <Text style={[styles.scheduleTitle, { color: theme.text }]}>{item.title}</Text>
+                  <Text style={[styles.scheduleType, { color: theme.textSecondary }]}>{item.activityType}</Text>
                 </View>
               </View>
             ))

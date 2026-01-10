@@ -18,14 +18,18 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { taskService, subjectService } from '../services/api';
+import notificationService from '../services/notificationService';
 import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
+import { useTheme } from '../context/ThemeContext';
 
 const TasksScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [filter, setFilter] = useState('all'); // all, pending, completed
   const [modalVisible, setModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [taskReminders, setTaskReminders] = useState({});
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -37,12 +41,14 @@ const TasksScreen = ({ navigation }) => {
   useEffect(() => {
     loadTasks();
     loadSubjects();
+    loadTaskReminders();
   }, [filter]);
 
   // Refresh tasks when screen comes into focus (e.g., after deleting a task)
   useFocusEffect(
     useCallback(() => {
       loadTasks();
+      loadTaskReminders();
     }, [filter])
   );
 
@@ -65,6 +71,24 @@ const TasksScreen = ({ navigation }) => {
       setSubjects(response.data);
     } catch (error) {
       console.error('Failed to load subjects:', error);
+    }
+  };
+
+  const loadTaskReminders = async () => {
+    try {
+      const allReminders = await notificationService.getStoredNotifications();
+      const reminderMap = {};
+      allReminders.forEach(reminder => {
+        if (reminder.taskId) {
+          if (!reminderMap[reminder.taskId]) {
+            reminderMap[reminder.taskId] = [];
+          }
+          reminderMap[reminder.taskId].push(reminder);
+        }
+      });
+      setTaskReminders(reminderMap);
+    } catch (error) {
+      console.error('Failed to load reminders:', error);
     }
   };
 
@@ -120,6 +144,7 @@ const TasksScreen = ({ navigation }) => {
       });
       Keyboard.dismiss();
       loadTasks();
+      loadTaskReminders();
     } catch (error) {
       console.error('Failed to create task:', error);
       console.error('Error status:', error.response?.status);
@@ -132,7 +157,7 @@ const TasksScreen = ({ navigation }) => {
 
   const renderTaskItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.taskItem}
+      style={[styles.taskItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
       onPress={() => navigation.navigate('TaskDetail', { taskId: item.id })}
     >
       <TouchableOpacity
@@ -142,17 +167,25 @@ const TasksScreen = ({ navigation }) => {
         <Icon
           name={item.completed ? 'check-circle' : 'radio-button-unchecked'}
           size={24}
-          color={item.completed ? '#27ae60' : '#ddd'}
+          color={item.completed ? '#27ae60' : theme.textTertiary}
         />
       </TouchableOpacity>
       
       <View style={styles.taskContent}>
-        <Text style={[styles.taskTitle, item.completed && styles.completedTask]}>
-          {item.title}
-        </Text>
+        <View style={styles.taskTitleContainer}>
+          <Text style={[styles.taskTitle, { color: theme.text }, item.completed && styles.completedTask]}>
+            {item.title}
+          </Text>
+          {taskReminders[item.id] && taskReminders[item.id].length > 0 && (
+            <View style={styles.reminderBadge}>
+              <Icon name="notifications-active" size={14} color="#fff" />
+              <Text style={styles.reminderBadgeText}>{taskReminders[item.id].length}</Text>
+            </View>
+          )}
+        </View>
         
         {item.description ? (
-          <Text style={styles.taskDescription} numberOfLines={2}>
+          <Text style={[styles.taskDescription, { color: theme.textSecondary }]} numberOfLines={2}>
             {item.description}
           </Text>
         ) : null}
@@ -169,7 +202,7 @@ const TasksScreen = ({ navigation }) => {
           </View>
           
           {item.dueDate && (
-            <Text style={styles.dueDate}>
+            <Text style={[styles.dueDate, { color: theme.textSecondary }]}>
               {formatDateShort(item.dueDate)}
             </Text>
           )}
@@ -188,16 +221,24 @@ const TasksScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Filter Buttons */}
       <View style={styles.filterContainer}>
         {['all', 'pending', 'completed'].map((filterType) => (
           <TouchableOpacity
             key={filterType}
-            style={[styles.filterButton, filter === filterType && styles.activeFilter]}
+            style={[
+              styles.filterButton, 
+              { backgroundColor: theme.cardBackground, borderColor: theme.border },
+              filter === filterType && { backgroundColor: theme.primary }
+            ]}
             onPress={() => setFilter(filterType)}
           >
-            <Text style={[styles.filterText, filter === filterType && styles.activeFilterText]}>
+            <Text style={[
+              styles.filterText, 
+              { color: theme.text },
+              filter === filterType && { color: '#fff' }
+            ]}>
               {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -212,8 +253,8 @@ const TasksScreen = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="assignment" size={50} color="#ddd" />
-            <Text style={styles.emptyText}>No tasks found</Text>
+            <Icon name="assignment" size={50} color={theme.textTertiary} />
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tasks found</Text>
           </View>
         }
       />
@@ -242,31 +283,31 @@ const TasksScreen = ({ navigation }) => {
             style={styles.keyboardView}
           >
             <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
+              <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
                 <View style={styles.modalHeader}>
                   <TouchableOpacity onPress={() => {
                     Keyboard.dismiss();
                     setModalVisible(false);
                   }}>
-                    <Icon name="close" size={28} color="#333" />
+                    <Icon name="close" size={28} color={theme.text} />
                   </TouchableOpacity>
-                  <Text style={styles.modalTitle}>Create New Task</Text>
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Create New Task</Text>
                   <View style={{ width: 28 }} />
                 </View>
                 
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                   placeholder="Task Title *"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={theme.textTertiary}
                   value={newTask.title}
                   onChangeText={(text) => setNewTask({...newTask, title: text})}
                   editable={true}
                 />
                 
                 <TextInput
-                  style={[styles.input, styles.textArea]}
+                  style={[styles.input, styles.textArea, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                   placeholder="Description (optional)"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={theme.textTertiary}
                   value={newTask.description}
                   onChangeText={(text) => setNewTask({...newTask, description: text})}
                   multiline
@@ -275,13 +316,47 @@ const TasksScreen = ({ navigation }) => {
                 
                 {/* Due Date Selector */}
                 <View style={styles.dueDateContainer}>
-                  <Text style={styles.label}>Due Date</Text>
+                  <Text style={[styles.label, { color: theme.text }]}>Due Date</Text>
+                  
+                  {/* Quick Date Buttons */}
+                  <View style={styles.quickDateButtons}>
+                    <TouchableOpacity
+                      style={[styles.quickDateButton, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date().toDateString() && styles.quickDateButtonActive]}
+                      onPress={() => setNewTask({...newTask, dueDate: new Date().toISOString()})}
+                    >
+                      <Text style={[styles.quickDateButtonText, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date().toDateString() && styles.quickDateButtonTextActive]}>
+                        Today
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={[styles.quickDateButton, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date(Date.now() + 86400000).toDateString() && styles.quickDateButtonActive]}
+                      onPress={() => {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        setNewTask({...newTask, dueDate: tomorrow.toISOString()});
+                      }}
+                    >
+                      <Text style={[styles.quickDateButtonText, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date(Date.now() + 86400000).toDateString() && styles.quickDateButtonTextActive]}>
+                        Tomorrow
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={styles.quickDateButton}
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Icon name="calendar-today" size={16} color="#4A90E2" />
+                      <Text style={styles.quickDateButtonText}>Pick Date</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
                   <TouchableOpacity
-                    style={styles.dueDateButton}
+                    style={[styles.dueDateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Icon name="calendar-today" size={20} color="#4A90E2" />
-                    <Text style={styles.dueDateButtonText}>
+                    <Text style={[styles.dueDateButtonText, { color: theme.text }]}>
                       {newTask.dueDate 
                         ? formatDate(newTask.dueDate)
                         : 'Select a date (optional)'
@@ -294,26 +369,28 @@ const TasksScreen = ({ navigation }) => {
                       mode="date"
                       display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                       onChange={handleDateChange}
-                      textColor="#333"
+                      textColor={theme.text}
                     />
                   )}
                 </View>
                 
                 {/* Priority Selector */}
                 <View style={styles.priorityContainer}>
-                  <Text style={styles.label}>Priority</Text>
+                  <Text style={[styles.label, { color: theme.text }]}>Priority</Text>
                   <View style={styles.priorityOptions}>
                     {['low', 'medium', 'high'].map((p) => (
                       <TouchableOpacity
                         key={p}
                         style={[
                           styles.priorityButton,
+                          { backgroundColor: theme.background, borderColor: theme.border },
                           newTask.priority === p && styles.priorityButtonActive
                         ]}
                         onPress={() => setNewTask({...newTask, priority: p})}
                       >
                         <Text style={[
                           styles.priorityButtonText,
+                          { color: theme.text },
                           newTask.priority === p && styles.priorityButtonTextActive
                         ]}>
                           {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -558,6 +635,36 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
   },
+  quickDateButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  quickDateButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  quickDateButtonActive: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  quickDateButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  quickDateButtonTextActive: {
+    color: '#fff',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -594,6 +701,26 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: '#fff',
+    fontWeight: 'bold',
+  },
+  taskTitleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  reminderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  reminderBadgeText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: 'bold',
   },
 });

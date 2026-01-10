@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { subjectService, taskService } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const SubjectsScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const [subjects, setSubjects] = useState([]);
   const [tasksBySubject, setTasksBySubject] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
@@ -42,6 +45,13 @@ const SubjectsScreen = ({ navigation }) => {
   useEffect(() => {
     loadSubjects();
   }, []);
+
+  // Refresh subjects when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadSubjects();
+    }, [])
+  );
 
   const loadSubjects = async () => {
     try {
@@ -150,7 +160,7 @@ const SubjectsScreen = ({ navigation }) => {
     
     return (
       <TouchableOpacity
-        style={styles.subjectCard}
+        style={[styles.subjectCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
         onPress={() => navigation.navigate('Tasks', { subjectId: item.id })}
         onLongPress={() => handleEditSubject(item)}
       >
@@ -159,31 +169,31 @@ const SubjectsScreen = ({ navigation }) => {
 
         {/* Subject Info */}
         <View style={styles.subjectInfo}>
-          <Text style={styles.subjectName}>{item.name}</Text>
+          <Text style={[styles.subjectName, { color: theme.text }]}>{item.name}</Text>
           
           {/* Task Counts */}
           <View style={styles.taskCounts}>
             <View style={styles.taskCountItem}>
-              <Text style={styles.taskCountNumber}>{taskCounts.total}</Text>
-              <Text style={styles.taskCountLabel}>Total</Text>
+              <Text style={[styles.taskCountNumber, { color: theme.primary }]}>{taskCounts.total}</Text>
+              <Text style={[styles.taskCountLabel, { color: theme.textSecondary }]}>Total</Text>
             </View>
             
-            <View style={styles.taskCountDivider} />
+            <View style={[styles.taskCountDivider, { backgroundColor: theme.border }]} />
             
             <View style={styles.taskCountItem}>
-              <Text style={[styles.taskCountNumber, styles.completedCount]}>
+              <Text style={[styles.taskCountNumber, { color: theme.success }]}>
                 {taskCounts.completed}
               </Text>
-              <Text style={styles.taskCountLabel}>Done</Text>
+              <Text style={[styles.taskCountLabel, { color: theme.textSecondary }]}>Done</Text>
             </View>
             
-            <View style={styles.taskCountDivider} />
+            <View style={[styles.taskCountDivider, { backgroundColor: theme.border }]} />
             
             <View style={styles.taskCountItem}>
-              <Text style={[styles.taskCountNumber, styles.pendingCount]}>
+              <Text style={[styles.taskCountNumber, { color: theme.warning }]}>
                 {taskCounts.pending}
               </Text>
-              <Text style={styles.taskCountLabel}>Pending</Text>
+              <Text style={[styles.taskCountLabel, { color: theme.textSecondary }]}>Pending</Text>
             </View>
           </View>
         </View>
@@ -209,11 +219,11 @@ const SubjectsScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Subjects</Text>
-        <Text style={styles.subtitle}>Manage your academic subjects</Text>
+      <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
+        <Text style={[styles.title, { color: theme.text }]}>My Subjects</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Manage your academic subjects</Text>
       </View>
 
       {/* Subject List */}
@@ -224,9 +234,9 @@ const SubjectsScreen = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="menu-book" size={60} color="#ddd" />
-            <Text style={styles.emptyTitle}>No Subjects Yet</Text>
-            <Text style={styles.emptyText}>
+            <Icon name="menu-book" size={60} color={theme.textTertiary} />
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Subjects Yet</Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               Add your first subject to get started
             </Text>
           </View>

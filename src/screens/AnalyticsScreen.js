@@ -19,8 +19,10 @@ import {
 import { analyticsService } from '../services/api';
 import moment from 'moment';
 import { formatDateShort } from '../utils/dateUtils';
+import { useTheme } from '../context/ThemeContext';
 
 const AnalyticsScreen = () => {
+  const { theme } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [overdueTasks, setOverdueTasks] = useState([]);
   const [workload, setWorkload] = useState({});
@@ -448,16 +450,16 @@ const AnalyticsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Progress Analytics</Text>
-          <Text style={styles.subtitle}>
+        <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.text }]}>Progress Analytics</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             Track your academic performance and productivity
           </Text>
         </View>
