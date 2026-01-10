@@ -201,14 +201,14 @@ const SubjectsScreen = ({ navigation }) => {
         {/* Action Buttons */}
         <View style={styles.subjectActions}>
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: theme.background }]}
             onPress={() => handleEditSubject(item)}
           >
-            <Icon name="edit" size={20} color="#4A90E2" />
+            <Icon name="edit" size={20} color={theme.primary} />
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: theme.background }]}
             onPress={() => handleDeleteSubject(item)}
           >
             <Icon name="delete" size={20} color="#e74c3c" />
@@ -231,7 +231,8 @@ const SubjectsScreen = ({ navigation }) => {
         data={subjects}
         renderItem={renderSubjectItem}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="menu-book" size={60} color={theme.textTertiary} />
@@ -264,18 +265,19 @@ const SubjectsScreen = ({ navigation }) => {
           resetForm();
         }}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
               {isEditMode ? 'Edit Subject' : 'New Subject'}
             </Text>
 
             {/* Subject Name */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Subject Name</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Subject Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 placeholder="e.g., Mathematics, Physics"
+                placeholderTextColor={theme.textTertiary}
                 value={newSubject.name}
                 onChangeText={(text) => setNewSubject({ ...newSubject, name: text })}
                 autoFocus
@@ -284,7 +286,7 @@ const SubjectsScreen = ({ navigation }) => {
 
             {/* Color Selection */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Color</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Color</Text>
               <View style={styles.colorGrid}>
                 {colorPalette.map((color) => (
                   <TouchableOpacity
@@ -306,7 +308,7 @@ const SubjectsScreen = ({ navigation }) => {
 
             {/* Color Preview */}
             <View style={styles.colorPreviewContainer}>
-              <Text style={styles.previewLabel}>Preview:</Text>
+              <Text style={[styles.previewLabel, { color: theme.text }]}>Preview:</Text>
               <View
                 style={[
                   styles.colorPreview,
@@ -320,17 +322,17 @@ const SubjectsScreen = ({ navigation }) => {
             {/* Action Buttons */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                 onPress={() => {
                   setModalVisible(false);
                   resetForm();
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
                 onPress={isEditMode ? handleUpdateSubject : handleCreateSubject}
               >
                 <Text style={styles.saveButtonText}>
@@ -348,39 +350,34 @@ const SubjectsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     padding: 20,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
   },
   listContent: {
     padding: 15,
   },
   subjectCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 15,
     padding: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
     alignItems: 'center',
+    borderWidth: 1,
   },
   colorIndicator: {
     width: 60,
@@ -394,7 +391,6 @@ const styles = StyleSheet.create({
   subjectName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 8,
   },
   taskCounts: {
@@ -408,7 +404,6 @@ const styles = StyleSheet.create({
   taskCountNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
   },
   completedCount: {
     color: '#27ae60',
@@ -418,13 +413,11 @@ const styles = StyleSheet.create({
   },
   taskCountLabel: {
     fontSize: 11,
-    color: '#666',
     marginTop: 2,
   },
   taskCountDivider: {
     width: 1,
     height: 20,
-    backgroundColor: '#eee',
     marginHorizontal: 15,
   },
   subjectActions: {
@@ -435,7 +428,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f8f9fa',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -463,13 +455,13 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 5,
   },
   modalContainer: {
@@ -479,8 +471,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 15,
     padding: 20,
     width: '90%',
     maxWidth: 400,
@@ -528,9 +519,9 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 3,
-    elevation: 5,
+    elevation: 4,
   },
   colorPreviewContainer: {
     marginBottom: 25,
@@ -572,7 +563,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
   },
   saveButtonText: {
     color: '#fff',

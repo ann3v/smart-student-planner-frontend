@@ -22,7 +22,7 @@ import { formatDateShort } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
 
 const AnalyticsScreen = () => {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [overdueTasks, setOverdueTasks] = useState([]);
   const [workload, setWorkload] = useState({});
@@ -187,12 +187,13 @@ const AnalyticsScreen = () => {
   };
 
   const renderTimeRangeSelector = () => (
-    <View style={styles.timeRangeSelector}>
+    <View style={[styles.timeRangeSelector, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
       {['week', 'month', 'semester'].map((range) => (
         <TouchableOpacity
           key={range}
           style={[
             styles.timeRangeButton,
+            { backgroundColor: theme.background, borderColor: theme.border },
             timeRange === range && styles.activeTimeRangeButton,
           ]}
           onPress={() => setTimeRange(range)}
@@ -200,6 +201,7 @@ const AnalyticsScreen = () => {
           <Text
             style={[
               styles.timeRangeButtonText,
+              { color: theme.text },
               timeRange === range && styles.activeTimeRangeButtonText,
             ]}
           >
@@ -215,22 +217,22 @@ const AnalyticsScreen = () => {
 
     return (
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Icon name="assignment" size={24} color="#3498db" />
-          <Text style={styles.statNumber}>{analytics.stats.totalTasks}</Text>
-          <Text style={styles.statLabel}>Total Tasks</Text>
+        <View style={[styles.statCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+          <Icon name="assignment" size={24} color={theme.primary} />
+          <Text style={[styles.statNumber, { color: theme.text }]}>{analytics.stats.totalTasks}</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Tasks</Text>
         </View>
         
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
           <Icon name="check-circle" size={24} color="#27ae60" />
-          <Text style={styles.statNumber}>{analytics.stats.completedTasks}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={[styles.statNumber, { color: theme.text }]}>{analytics.stats.completedTasks}</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
         </View>
         
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
           <Icon name="pending" size={24} color="#f39c12" />
-          <Text style={styles.statNumber}>{analytics.stats.pendingTasks}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+          <Text style={[styles.statNumber, { color: theme.text }]}>{analytics.stats.pendingTasks}</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
         </View>
       </View>
     );
@@ -242,15 +244,15 @@ const AnalyticsScreen = () => {
     const displayRate = isFinite(rate) ? rate : 0;
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Completion Rate</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Completion Rate</Text>
         <View style={styles.completionRateContainer}>
           <View style={styles.completionCircle}>
             <Text style={styles.completionRateText}>
               {displayRate}%
             </Text>
           </View>
-          <Text style={styles.completionLabel}>
+          <Text style={[styles.completionLabel, { color: theme.textSecondary }]}>
             of tasks completed in the last {timeRange}
           </Text>
         </View>
@@ -263,31 +265,31 @@ const AnalyticsScreen = () => {
     
     if (!data) {
       return (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Daily Productivity</Text>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Daily Productivity</Text>
           <View style={styles.emptyStateContainer}>
-            <Icon name="show-chart" size={48} color="#ccc" />
-            <Text style={styles.emptyStateText}>No productivity data available</Text>
-            <Text style={styles.emptyStateSubtext}>Create some tasks to see your productivity trends</Text>
+            <Icon name="show-chart" size={48} color={theme.textTertiary} />
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No productivity data available</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.textTertiary }]}>Create some tasks to see your productivity trends</Text>
           </View>
         </View>
       );
     }
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Daily Productivity</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Daily Productivity</Text>
         <LineChart
           data={data}
           width={screenWidth - 40}
           height={220}
           chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
+            backgroundColor: theme.cardBackground,
+            backgroundGradientFrom: theme.cardBackground,
+            backgroundGradientTo: theme.cardBackground,
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(74, 144, 226, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            color: (opacity = 1) => `rgba(90, 159, 255, ${opacity})`,
+            labelColor: (opacity = 1) => isDark ? `rgba(245, 245, 245, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
             style: {
               borderRadius: 16,
             },
@@ -351,12 +353,12 @@ const AnalyticsScreen = () => {
           width={screenWidth - 40}
           height={220}
           chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
+            backgroundColor: theme.cardBackground,
+            backgroundGradientFrom: theme.cardBackground,
+            backgroundGradientTo: theme.cardBackground,
             decimalPlaces: 1,
-            color: (opacity = 1) => `rgba(52, 152, 219, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            color: (opacity = 1) => `rgba(90, 159, 255, ${opacity})`,
+            labelColor: (opacity = 1) => isDark ? `rgba(245, 245, 245, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
             barPercentage: 0.5,
           }}
           style={styles.chart}
@@ -452,6 +454,8 @@ const AnalyticsScreen = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={{ backgroundColor: theme.background }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -509,44 +513,37 @@ const AnalyticsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     padding: 20,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
   },
   timeRangeSelector: {
     flexDirection: 'row',
     padding: 15,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   timeRangeButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginHorizontal: 5,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
     alignItems: 'center',
+    borderWidth: 1,
   },
   activeTimeRangeButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
   },
   timeRangeButtonText: {
-    color: '#666',
     fontWeight: '500',
   },
   activeTimeRangeButtonText: {
@@ -559,38 +556,33 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 15,
     marginHorizontal: 5,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
+    borderWidth: 1,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
     marginVertical: 8,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
   },
   section: {
-    backgroundColor: '#fff',
     marginTop: 15,
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
   },
   sectionHeader: {
@@ -606,10 +598,15 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 15,
+    shadowColor: '#5A9FFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   completionRateText: {
     fontSize: 28,
@@ -618,7 +615,6 @@ const styles = StyleSheet.create({
   },
   completionLabel: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
   },
   chart: {
@@ -666,6 +662,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#e74c3c',
   },
   overdueTaskInfo: {
     flex: 1,
@@ -696,7 +694,7 @@ const styles = StyleSheet.create({
   workloadCount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4A90E2',
+    color: '#5A9FFF',
   },
   emptyState: {
     alignItems: 'center',
@@ -714,7 +712,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 40,
     backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   emptyStateText: {
     fontSize: 16,

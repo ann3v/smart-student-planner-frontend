@@ -43,7 +43,7 @@ const LoginScreen = ({ navigation }) => {
           <Text style={[styles.title, { color: theme.primary }]}>Smart Student Planner</Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Login to continue</Text>
 
-          <View style={styles.form}>
+          <View style={[styles.form, { backgroundColor: theme.cardBackground }]}>
             <TextInput
               style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
               placeholder="Email"
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   form: {
-    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
     shadowColor: '#000',

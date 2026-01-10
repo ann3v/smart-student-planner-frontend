@@ -262,10 +262,10 @@ const TaskDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Task Title */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           {isEditing ? (
             <TextInput
-              style={[styles.titleInput, { color: theme.text, borderColor: theme.border }]}
+              style={[styles.titleInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
               placeholder="Task title"
               placeholderTextColor={theme.textTertiary}
               value={editedTask.title}
@@ -276,36 +276,37 @@ const TaskDetailScreen = ({ route, navigation }) => {
           )}
           
           <TouchableOpacity
-            style={[styles.completionButton, task.completed && styles.completedButton]}
+            style={[styles.completionButton, { backgroundColor: theme.background }, task.completed && styles.completedButton]}
             onPress={handleToggleCompletion}
           >
             <Icon
               name={task.completed ? 'check-circle' : 'radio-button-unchecked'}
               size={20}
-              color={task.completed ? '#27ae60' : '#ddd'}
+              color={task.completed ? '#27ae60' : theme.primary}
             />
-            <Text style={[styles.completionText, task.completed && styles.completedText]}>
+            <Text style={[styles.completionText, { color: theme.text }, task.completed && styles.completedText]}>
               {task.completed ? 'Completed' : 'Mark as complete'}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Task Details */}
-        <View style={styles.detailsContainer}>
+        <View style={[styles.detailsContainer, { backgroundColor: theme.cardBackground }]}>
           {/* Description */}
           <View style={styles.detailSection}>
-            <Text style={styles.detailLabel}>Description</Text>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Description</Text>
             {isEditing ? (
               <TextInput
-                style={styles.descriptionInput}
+                style={[styles.descriptionInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 value={editedTask.description || ''}
                 onChangeText={(text) => setEditedTask({ ...editedTask, description: text })}
                 placeholder="Add description..."
+                placeholderTextColor={theme.textTertiary}
                 multiline
                 numberOfLines={4}
               />
             ) : (
-              <Text style={styles.detailValue}>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
                 {task.description || 'No description added'}
               </Text>
             )}
@@ -313,7 +314,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
           {/* Subject */}
           <View style={styles.detailSection}>
-            <Text style={styles.detailLabel}>Subject</Text>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Subject</Text>
             {isEditing ? (
               <View style={styles.subjectSelector}>
                 {subjects.map(subject => (
@@ -339,7 +340,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
           {/* Priority */}
           <View style={styles.detailSection}>
-            <Text style={styles.detailLabel}>Priority</Text>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Priority</Text>
             {isEditing ? (
               <View style={styles.prioritySelector}>
                 {['low', 'medium', 'high'].map(priority => (
@@ -369,25 +370,25 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
           {/* Due Date */}
           <View style={styles.detailSection}>
-            <Text style={styles.detailLabel}>Due Date & Time</Text>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Due Date & Time</Text>
             {isEditing ? (
               <View style={styles.dateTimeContainer}>
                 <TouchableOpacity
-                  style={styles.dateTimeButton}
+                  style={[styles.dateTimeButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                   onPress={() => setShowDatePicker(true)}
                 >
-                  <Icon name="calendar-today" size={20} color="#4A90E2" />
-                  <Text style={styles.dateTimeButtonText}>
+                  <Icon name="calendar-today" size={20} color={theme.primary} />
+                  <Text style={[styles.dateTimeButtonText, { color: theme.text }]}>
                     {editedTask.dueDate ? formatDateLocal(editedTask.dueDate) : 'Select Date'}
                   </Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={styles.dateTimeButton}
+                  style={[styles.dateTimeButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                   onPress={() => setShowTimePicker(true)}
                 >
-                  <Icon name="access-time" size={20} color="#4A90E2" />
-                  <Text style={styles.dateTimeButtonText}>
+                  <Icon name="access-time" size={20} color={theme.primary} />
+                  <Text style={[styles.dateTimeButtonText, { color: theme.text }]}>
                     {editedTask.dueDate ? formatTime(editedTask.dueDate) : 'Select Time'}
                   </Text>
                 </TouchableOpacity>
@@ -414,13 +415,13 @@ const TaskDetailScreen = ({ route, navigation }) => {
               </View>
             ) : (
               <View style={styles.dateTimeDisplay}>
-                <Icon name="calendar-today" size={20} color="#4A90E2" />
+                <Icon name="calendar-today" size={20} color={theme.primary} />
                 <Text style={styles.dateTimeText}>
                   {task.dueDate ? formatDateLocal(task.dueDate) : 'No due date'}
                 </Text>
                 {task.dueDate && (
                   <>
-                    <Icon name="access-time" size={20} color="#4A90E2" style={styles.timeIcon} />
+                    <Icon name="access-time" size={20} color={theme.primary} style={styles.timeIcon} />
                     <Text style={styles.dateTimeText}>{formatTime(task.dueDate)}</Text>
                   </>
                 )}
@@ -438,7 +439,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
           {/* Estimated Duration */}
           <View style={styles.detailSection}>
-            <Text style={styles.detailLabel}>Estimated Duration</Text>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Estimated Duration</Text>
             {isEditing ? (
               <View style={styles.durationSelector}>
                 {[30, 60, 90, 120].map(minutes => (
@@ -446,16 +447,17 @@ const TaskDetailScreen = ({ route, navigation }) => {
                     key={minutes}
                     style={[
                       styles.durationOption,
-                      editedTask.estimatedDuration === minutes && styles.selectedDurationOption
+                      { backgroundColor: theme.background, borderColor: theme.border },
+                      editedTask.estimatedDuration === minutes && { backgroundColor: theme.primary, borderColor: theme.primary }
                     ]}
                     onPress={() => setEditedTask({ ...editedTask, estimatedDuration: minutes })}
                   >
-                    <Text style={styles.durationOptionText}>{minutes} min</Text>
+                    <Text style={[styles.durationOptionText, editedTask.estimatedDuration === minutes && { color: '#fff' }, editedTask.estimatedDuration !== minutes && { color: theme.text }]}>{minutes} min</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             ) : (
-              <Text style={styles.detailValue}>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
                 {task.estimatedDuration ? `${task.estimatedDuration} minutes` : 'Not specified'}
               </Text>
             )}
@@ -464,27 +466,27 @@ const TaskDetailScreen = ({ route, navigation }) => {
           {/* Reminders Section */}
           <View style={styles.detailSection}>
             <View style={styles.reminderHeader}>
-              <Text style={styles.detailLabel}>Reminders</Text>
+              <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Reminders</Text>
               <TouchableOpacity
                 style={styles.addReminderButton}
                 onPress={() => setShowReminderModal(true)}
               >
-                <Icon name="add-circle" size={20} color="#4A90E2" />
-                <Text style={styles.addReminderText}>Add Reminder</Text>
+                <Icon name="add-circle" size={20} color={theme.primary} />
+                <Text style={[styles.addReminderText, { color: theme.primary }]}>Add Reminder</Text>
               </TouchableOpacity>
             </View>
 
             {taskReminders.length > 0 ? (
               <View style={styles.remindersList}>
                 {taskReminders.map((reminder) => (
-                  <View key={reminder.id} style={styles.reminderItem}>
+                  <View key={reminder.id} style={[styles.reminderItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
                     <View style={styles.reminderInfo}>
-                      <Icon name="notifications-active" size={18} color="#4A90E2" />
+                      <Icon name="notifications-active" size={18} color={theme.primary} />
                       <View style={styles.reminderDetails}>
-                        <Text style={styles.reminderText}>
+                        <Text style={[styles.reminderText, { color: theme.text }]}>
                           {reminder.minutesBefore} minutes before deadline
                         </Text>
-                        <Text style={styles.reminderTime}>
+                        <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
                           Scheduled at {new Date(reminder.scheduledAt).toLocaleString()}
                         </Text>
                       </View>
@@ -499,7 +501,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
                 ))}
               </View>
             ) : (
-              <Text style={styles.noRemindersText}>No reminders set</Text>
+              <Text style={[styles.noRemindersText, { color: theme.textSecondary }]}>No reminders set</Text>
             )}
 
             {/* Reminder Modal */}
@@ -509,16 +511,16 @@ const TaskDetailScreen = ({ route, navigation }) => {
               animationType="slide"
               onRequestClose={() => setShowReminderModal(false)}
             >
-              <View style={styles.reminderModalOverlay}>
-                <View style={styles.reminderModalContent}>
+              <View style={[styles.reminderModalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
+                <View style={[styles.reminderModalContent, { backgroundColor: theme.cardBackground }]}>
                   <View style={styles.reminderModalHeader}>
-                    <Text style={styles.reminderModalTitle}>Set a Reminder</Text>
+                    <Text style={[styles.reminderModalTitle, { color: theme.text }]}>Set a Reminder</Text>
                     <TouchableOpacity onPress={() => setShowReminderModal(false)}>
-                      <Icon name="close" size={24} color="#333" />
+                      <Icon name="close" size={24} color={theme.text} />
                     </TouchableOpacity>
                   </View>
 
-                  <Text style={styles.reminderModalSubtitle}>
+                  <Text style={[styles.reminderModalSubtitle, { color: theme.textSecondary }]}>
                     Choose when to be reminded before the deadline:
                   </Text>
 
@@ -526,7 +528,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
                     {REMINDER_OPTIONS.map((option) => (
                       <TouchableOpacity
                         key={option.value}
-                        style={styles.reminderOption}
+                        style={[styles.reminderOption, { backgroundColor: theme.background, borderColor: theme.border }]}
                         onPress={() => {
                           if (option.value === 'custom') {
                             // Handle custom reminder
@@ -536,15 +538,15 @@ const TaskDetailScreen = ({ route, navigation }) => {
                           }
                         }}
                       >
-                        <Icon name="schedule" size={24} color="#4A90E2" />
-                        <Text style={styles.reminderOptionText}>{option.label}</Text>
-                        <Icon name="chevron-right" size={20} color="#999" />
+                        <Icon name="schedule" size={24} color={theme.primary} />
+                        <Text style={[styles.reminderOptionText, { color: theme.text }]}>{option.label}</Text>
+                        <Icon name="chevron-right" size={20} color={theme.textSecondary} />
                       </TouchableOpacity>
                     ))}
                   </View>
 
                   {!task.dueDate && (
-                    <Text style={styles.dueDataWarning}>
+                    <Text style={[styles.dueDataWarning, { color: theme.warning }]}>
                       ⚠️ Please set a due date to schedule reminders
                     </Text>
                   )}
@@ -556,9 +558,9 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
         {/* Save Button (when editing) */}
         {isEditing && (
-          <View style={styles.saveSection}>
+          <View style={[styles.saveSection, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
             <TouchableOpacity
-              style={styles.saveButton}
+              style={[styles.saveButton, { backgroundColor: theme.primary }]}
               onPress={handleUpdateTask}
             >
               <Text style={styles.saveButtonText}>Save Changes</Text>
@@ -573,7 +575,6 @@ const TaskDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   loadingContainer: {
     flex: 1,
@@ -585,9 +586,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   headerActions: {
     flexDirection: 'row',
@@ -600,28 +599,22 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     marginLeft: 5,
-    color: '#4A90E2',
     fontWeight: '500',
   },
   section: {
     padding: 20,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
   },
   titleInput: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 5,
     padding: 10,
   },
@@ -629,16 +622,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#f8f9fa',
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   completedButton: {
-    backgroundColor: '#e8f6ef',
+    opacity: 0.7,
   },
   completionText: {
     marginLeft: 8,
-    color: '#666',
     fontWeight: '500',
   },
   completedText: {
@@ -646,25 +637,21 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     padding: 20,
-    backgroundColor: '#fff',
   },
   detailSection: {
     marginBottom: 25,
   },
   detailLabel: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
     fontWeight: '500',
   },
   detailValue: {
     fontSize: 16,
-    color: '#333',
     lineHeight: 24,
   },
   descriptionInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 5,
     padding: 12,
     fontSize: 16,
@@ -698,7 +685,6 @@ const styles = StyleSheet.create({
   },
   dateTimeText: {
     fontSize: 16,
-    color: '#333',
     marginLeft: 8,
     marginRight: 16,
   },
@@ -793,9 +779,7 @@ const styles = StyleSheet.create({
   },
   saveSection: {
     padding: 20,
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   saveButton: {
     backgroundColor: '#4A90E2',
@@ -875,7 +859,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   reminderModalContent: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,

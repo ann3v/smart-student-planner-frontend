@@ -206,7 +206,10 @@ const SettingsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView>
+      <ScrollView
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={{ backgroundColor: theme.background }}
+      >
         {/* Profile Section */}
         <View style={[styles.profileSection, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <View style={styles.profileHeader}>
@@ -401,13 +404,14 @@ const SettingsScreen = ({ navigation }) => {
         onRequestClose={() => setShowProfileModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Profile</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Profile</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Name</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
+                placeholderTextColor={theme.textTertiary}
                 value={profileData.name}
                 onChangeText={(text) => setProfileData({ ...profileData, name: text })}
                 placeholder="Enter your name"
@@ -415,28 +419,29 @@ const SettingsScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Email</Text>
               <TextInput
-                style={[styles.input, styles.disabledInput]}
+                style={[styles.input, styles.disabledInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textSecondary }]}
                 value={profileData.email}
                 editable={false}
                 placeholder="Email (cannot be changed)"
+                placeholderTextColor={theme.textTertiary}
               />
             </View>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background }]}
                 onPress={() => setShowProfileModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
                 onPress={handleUpdateProfile}
               >
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={[styles.saveButtonText, { color: '#fff' }]}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -451,13 +456,14 @@ const SettingsScreen = ({ navigation }) => {
         onRequestClose={() => setShowPasswordModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Change Password</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Change Password</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Current Password</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Current Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
+                placeholderTextColor={theme.textTertiary}
                 value={passwordData.currentPassword}
                 onChangeText={(text) => setPasswordData({ ...passwordData, currentPassword: text })}
                 placeholder="Enter current password"
@@ -466,9 +472,10 @@ const SettingsScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>New Password</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>New Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
+                placeholderTextColor={theme.textTertiary}
                 value={passwordData.newPassword}
                 onChangeText={(text) => setPasswordData({ ...passwordData, newPassword: text })}
                 placeholder="Enter new password"
@@ -477,9 +484,10 @@ const SettingsScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Confirm New Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
+                placeholderTextColor={theme.textTertiary}
                 value={passwordData.confirmPassword}
                 onChangeText={(text) => setPasswordData({ ...passwordData, confirmPassword: text })}
                 placeholder="Confirm new password"
@@ -489,7 +497,7 @@ const SettingsScreen = ({ navigation }) => {
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background }]}
                 onPress={() => {
                   setShowPasswordModal(false);
                   setPasswordData({
@@ -499,14 +507,14 @@ const SettingsScreen = ({ navigation }) => {
                   });
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
                 onPress={handleChangePassword}
               >
-                <Text style={styles.saveButtonText}>Change Password</Text>
+                <Text style={[styles.saveButtonText, { color: '#fff' }]}>Change Password</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -521,37 +529,40 @@ const SettingsScreen = ({ navigation }) => {
         onRequestClose={() => setShowRemindersModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
             <View style={styles.remindersModalHeader}>
-              <Text style={styles.modalTitle}>Active Reminders</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Active Reminders</Text>
               <TouchableOpacity onPress={() => setShowRemindersModal(false)}>
-                <Icon name="close" size={28} color="#333" />
+                <Icon name="close" size={28} color={theme.text} />
               </TouchableOpacity>
             </View>
 
             {remindersCount > 0 ? (
-              <ScrollView style={styles.remindersList}>
-                <Text style={styles.remindersInfo}>
+              <ScrollView
+                style={[styles.remindersList, { backgroundColor: theme.cardBackground }]}
+                contentContainerStyle={{ backgroundColor: theme.cardBackground }}
+              >
+                <Text style={[styles.remindersInfo, { color: theme.textSecondary }]}>
                   You have {remindersCount} active reminders set
                 </Text>
               </ScrollView>
             ) : (
               <View style={styles.noRemindersContainer}>
-                <Icon name="notifications-off" size={48} color="#ddd" />
-                <Text style={styles.noRemindersText}>
+                <Icon name="notifications-off" size={48} color={theme.textTertiary} />
+                <Text style={[styles.noRemindersText, { color: theme.text }]}>
                   No active reminders
                 </Text>
-                <Text style={styles.noRemindersSubtext}>
+                <Text style={[styles.noRemindersSubtext, { color: theme.textSecondary }]}>
                   Add reminders to your tasks and scheduled sessions to stay on track
                 </Text>
               </View>
             )}
 
             <TouchableOpacity
-              style={styles.remindersModalButton}
+              style={[styles.remindersModalButton, { backgroundColor: theme.primary }]}
               onPress={() => setShowRemindersModal(false)}
             >
-              <Text style={styles.remindersModalButtonText}>Close</Text>
+              <Text style={[styles.remindersModalButtonText, { color: '#fff' }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -563,13 +574,10 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   profileSection: {
-    backgroundColor: '#fff',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   profileHeader: {
     flexDirection: 'row',
@@ -615,7 +623,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   section: {
-    backgroundColor: '#fff',
     marginTop: 15,
     paddingHorizontal: 20,
   },
@@ -689,7 +696,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
     width: '90%',

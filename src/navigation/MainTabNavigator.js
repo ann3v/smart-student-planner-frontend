@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialIcons } from '@expo/vector-icons'; 
+import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 // Import screens
 import DashboardScreen from '../screens/DashboradScreen.js';
@@ -12,6 +13,8 @@ import AnalyticsScreen from '../screens/AnalyticsScreen.js';
 const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -38,8 +41,13 @@ const MainTabNavigator = () => {
 
           return <MaterialIcons name={iconName} size={size} color={color} />; 
         },
-        tabBarActiveTintColor: '#4A90E2',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textTertiary,
+        tabBarStyle: {
+          backgroundColor: theme.cardBackground,
+          borderTopColor: theme.border,
+          borderTopWidth: 1,
+        },
         headerShown: false,
       })}
     >

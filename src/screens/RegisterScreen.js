@@ -92,7 +92,7 @@ const RegisterScreen = ({ navigation }) => {
             <Text style={[styles.title, { color: theme.primary }]}>Create Account</Text>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Join Smart Student Planner today</Text>
 
-            <View style={styles.form}>
+            <View style={[styles.form, { backgroundColor: theme.cardBackground }]}>
               {/* Name Input */}
               <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                 <Icon name="person" size={20} color={theme.textSecondary} style={styles.inputIcon} />
@@ -267,7 +267,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   form: {
-    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
     shadowColor: '#000',

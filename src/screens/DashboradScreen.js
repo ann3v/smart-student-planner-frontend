@@ -104,78 +104,80 @@ const DashboardScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={{ backgroundColor: theme.background }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
+        <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <View>
             <Text style={[styles.greeting, { color: theme.text }]}>Hello, {user?.name || 'Student'}!</Text>
             <Text style={[styles.date, { color: theme.textSecondary }]}>{getDayName()}, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-            <MaterialIcons name="settings" size={24} color="#4A90E2" />
+            <MaterialIcons name="settings" size={24} color={theme.primary} />
           </TouchableOpacity>
         </View>
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text style={[styles.statNumber, { color: theme.primary }]}>{stats.totalTasks}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Tasks</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text style={[styles.statNumber, { color: theme.success }]}>{stats.completedTasks}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text style={[styles.statNumber, { color: theme.warning }]}>{stats.pendingTasks}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
           </View>
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
             <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
+              style={[styles.actionButton, { backgroundColor: theme.background }]}
               onPress={() => navigation.navigate('Tasks')}
             >
-              <MaterialIcons name="assignment" size={30} color="#4A90E2" />
+              <MaterialIcons name="assignment" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Tasks</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
+              style={[styles.actionButton, { backgroundColor: theme.background }]}
               onPress={() => navigation.navigate('Schedule')}
             >
-              <MaterialIcons name="calendar-today" size={30} color="#4A90E2" />
+              <MaterialIcons name="calendar-today" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Schedule</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
+              style={[styles.actionButton, { backgroundColor: theme.background }]}
               onPress={() => navigation.navigate('Subjects')}
             >
-              <MaterialIcons name="menu-book" size={30} color="#4A90E2" />
+              <MaterialIcons name="menu-book" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Subjects</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
+              style={[styles.actionButton, { backgroundColor: theme.background }]}
               onPress={() => navigation.navigate('Analytics')}
             >
-              <MaterialIcons name="analytics" size={30} color="#4A90E2" />
+              <MaterialIcons name="analytics" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Analytics</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Today's Tasks */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Tasks</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Tasks')}>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={[styles.seeAll, { color: theme.primary }]}>See All</Text>
             </TouchableOpacity>
           </View>
           
@@ -185,7 +187,7 @@ const DashboardScreen = ({ navigation }) => {
             todayTasks.slice(0, 3).map(task => (
               <TouchableOpacity
                 key={task.id}
-                style={[styles.taskItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
+                style={[styles.taskItem, { backgroundColor: theme.background, borderColor: theme.border }]}
                 onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
               >
                 <View style={styles.taskContent}>
@@ -199,7 +201,7 @@ const DashboardScreen = ({ navigation }) => {
                   <MaterialIcons
                     name={task.completed ? 'check-circle' : 'radio-button-unchecked'}
                     size={24}
-                    color={task.completed ? '#27ae60' : '#ddd'}
+                    color={task.completed ? theme.success : theme.textTertiary}
                   />
                 </View>
               </TouchableOpacity>
@@ -208,11 +210,11 @@ const DashboardScreen = ({ navigation }) => {
         </View>
 
         {/* Today's Schedule */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Schedule</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Schedule')}>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={[styles.seeAll, { color: theme.primary }]}>See All</Text>
             </TouchableOpacity>
           </View>
           
@@ -220,7 +222,7 @@ const DashboardScreen = ({ navigation }) => {
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No schedule for today</Text>
           ) : (
             todaySchedule.slice(0, 3).map(item => (
-              <View key={item.id} style={[styles.scheduleItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+              <View key={item.id} style={[styles.scheduleItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
                 <View style={styles.timeContainer}>
                   <Text style={[styles.timeText, { color: theme.primary }]}>{item.startTime}</Text>
                   <Text style={[styles.timeText, { color: theme.textTertiary }]}>to</Text>
@@ -239,36 +241,146 @@ const DashboardScreen = ({ navigation }) => {
   );
 };
 
-// --- Styles remain the same ---
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#fff' },
-  greeting: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  date: { fontSize: 16, color: '#666', marginTop: 5 },
-  statsContainer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 10 },
-  statCard: { backgroundColor: '#fff', padding: 15, borderRadius: 10, alignItems: 'center', flex: 1, marginHorizontal: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 3 },
-  statNumber: { fontSize: 24, fontWeight: 'bold', color: '#4A90E2' },
-  statLabel: { fontSize: 12, color: '#666', marginTop: 5 },
-  section: { backgroundColor: '#fff', marginTop: 20, paddingHorizontal: 20, paddingVertical: 15 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  seeAll: { color: '#4A90E2', fontSize: 14 },
-  actionsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  actionButton: { alignItems: 'center', padding: 15, flex: 1 },
-  actionText: { marginTop: 8, color: '#333', fontSize: 12 },
-  taskItem: { backgroundColor: '#f8f9fa', padding: 15, borderRadius: 8, marginBottom: 10 },
-  taskContent: { flexDirection: 'row', alignItems: 'center' },
-  priorityDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
-  taskInfo: { flex: 1 },
-  taskTitle: { fontSize: 16, color: '#333', fontWeight: '500' },
-  taskSubject: { fontSize: 12, color: '#666', marginTop: 2 },
-  emptyText: { textAlign: 'center', color: '#999', fontStyle: 'italic', paddingVertical: 20 },
-  scheduleItem: { flexDirection: 'row', backgroundColor: '#f8f9fa', padding: 15, borderRadius: 8, marginBottom: 10 },
-  timeContainer: { alignItems: 'center', marginRight: 15, minWidth: 60 },
-  timeText: { fontSize: 12, color: '#666' },
-  scheduleContent: { flex: 1 },
-  scheduleTitle: { fontSize: 16, fontWeight: '500', color: '#333' },
-  scheduleType: { fontSize: 12, color: '#4A90E2', marginTop: 2 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f5f5f5' 
+  },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 20, 
+    borderBottomWidth: 1,
+  },
+  greeting: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+  },
+  date: { 
+    fontSize: 16, 
+    marginTop: 5 
+  },
+  statsContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 20, 
+    marginTop: 10 
+  },
+  statCard: { 
+    padding: 15, 
+    borderRadius: 12, 
+    alignItems: 'center', 
+    flex: 1, 
+    marginHorizontal: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.08, 
+    shadowRadius: 4, 
+    elevation: 2,
+    borderWidth: 1,
+  },
+  statNumber: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+  },
+  statLabel: { 
+    fontSize: 12, 
+    marginTop: 5 
+  },
+  section: { 
+    marginTop: 20, 
+    paddingHorizontal: 20, 
+    paddingVertical: 15,
+    borderTopWidth: 1,
+  },
+  sectionHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 15 
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+  },
+  seeAll: { 
+    fontSize: 14 
+  },
+  actionsGrid: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginTop: 10 
+  },
+  actionButton: { 
+    alignItems: 'center', 
+    padding: 15, 
+    flex: 1,
+    borderRadius: 12,
+  },
+  actionText: { 
+    marginTop: 8, 
+    fontSize: 12 
+  },
+  taskItem: { 
+    padding: 15, 
+    borderRadius: 10, 
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  taskContent: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  priorityDot: { 
+    width: 10, 
+    height: 10, 
+    borderRadius: 5, 
+    marginRight: 10 
+  },
+  taskInfo: { 
+    flex: 1 
+  },
+  taskTitle: { 
+    fontSize: 16, 
+    fontWeight: '500' 
+  },
+  taskSubject: { 
+    fontSize: 12, 
+    marginTop: 2 
+  },
+  emptyText: { 
+    textAlign: 'center', 
+    fontStyle: 'italic', 
+    paddingVertical: 20 
+  },
+  scheduleItem: { 
+    flexDirection: 'row', 
+    padding: 15, 
+    borderRadius: 10, 
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  timeContainer: { 
+    alignItems: 'center', 
+    marginRight: 15, 
+    minWidth: 60 
+  },
+  timeText: { 
+    fontSize: 12, 
+  },
+  scheduleContent: { 
+    flex: 1 
+  },
+  scheduleTitle: { 
+    fontSize: 16, 
+    fontWeight: '500', 
+  },
+  scheduleType: { 
+    fontSize: 12, 
+    marginTop: 2 
+  },
 });
 
 export default DashboardScreen;

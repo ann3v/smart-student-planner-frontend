@@ -368,8 +368,8 @@ const ScheduleScreen = ({ navigation }) => {
     const times = [];
     for (let hour = 8; hour <= 22; hour++) {
       times.push(
-        <View key={hour} style={styles.timeMarker}>
-          <Text style={styles.timeMarkerText}>
+        <View key={hour} style={[styles.timeMarker, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.timeMarkerText, { color: theme.textSecondary }]}>
             {hour % 12 || 12}:00 {hour >= 12 ? 'PM' : 'AM'}
           </Text>
         </View>
@@ -393,13 +393,13 @@ const ScheduleScreen = ({ navigation }) => {
             style={[styles.todayButton, { backgroundColor: theme.background }]}
             onPress={() => setSelectedDay(new Date().getDay())}
           >
-            <Icon name="today" size={20} color="#4A90E2" />
+            <Icon name="today" size={20} color={theme.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Improved Day Selector with Current Day Indicator */}
-      <View style={styles.daySelectorContainer}>
+      <View style={[styles.daySelectorContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
@@ -450,12 +450,12 @@ const ScheduleScreen = ({ navigation }) => {
                   <View style={[
                     styles.sessionCountBadge,
                     { backgroundColor: theme.warning },
-                    isSelected && { backgroundColor: '#fff' }
+                    isSelected && { backgroundColor: theme.primary }
                   ]}>
                     <Text style={[
                       styles.sessionCountText,
                       { color: '#fff' },
-                      isSelected && { color: theme.primary }
+                      isSelected && { color: theme.text }
                     ]}>
                       {sessionCount}
                     </Text>
@@ -468,16 +468,16 @@ const ScheduleScreen = ({ navigation }) => {
       </View>
 
       {/* Schedule View */}
-      <ScrollView style={styles.scheduleScrollView}>
+      <ScrollView style={[styles.scheduleScrollView, { backgroundColor: theme.background }]}>
         <View style={styles.scheduleContainer}>
           {/* Time Column */}
-          <View style={styles.timeColumn}>
+          <View style={[styles.timeColumn, { backgroundColor: theme.cardBackground, borderRightColor: theme.border }]}>
             {renderTimeColumn()}
           </View>
 
           {/* Schedule Column */}
           <View style={styles.scheduleColumn}>
-            <View style={styles.timeSlotsContainer}>
+            <View style={[styles.timeSlotsContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
               {/* Grid Lines for better readability */}
               {Array.from({ length: 15 }).map((_, i) => (
                 <View key={i} style={[styles.gridLine, { backgroundColor: theme.border }]} />
@@ -539,21 +539,23 @@ const ScheduleScreen = ({ navigation }) => {
 
             {/* Day Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Day</Text>
+              <Text style={[styles.sectionLabel, { color: theme.text }]}>Day</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {days.map((day, index) => (
                   <TouchableOpacity
                     key={index}
                     style={[
                       styles.dayOption,
-                      newSchedule.dayOfWeek === index && styles.selectedDayOption,
+                      { backgroundColor: theme.background, borderColor: theme.border },
+                      newSchedule.dayOfWeek === index && { backgroundColor: theme.primary, borderColor: theme.primary },
                     ]}
                     onPress={() => setNewSchedule({ ...newSchedule, dayOfWeek: index })}
                   >
                     <Text
                       style={[
                         styles.dayOptionText,
-                        newSchedule.dayOfWeek === index && styles.selectedDayOptionText,
+                        { color: theme.text },
+                        newSchedule.dayOfWeek === index && { color: '#fff' },
                       ]}
                     >
                       {day.substring(0, 3)}
@@ -565,19 +567,19 @@ const ScheduleScreen = ({ navigation }) => {
 
             {/* Activity Type */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Activity Type</Text>
+              <Text style={[styles.sectionLabel, { color: theme.text }]}>Activity Type</Text>
               <View style={styles.activityTypeContainer}>
                 {['class', 'study', 'break', 'other'].map((type) => (
                   <TouchableOpacity
                     key={type}
                     style={[
                       styles.activityTypeButton,
-                      newSchedule.activityType === type && styles.selectedActivityTypeButton,
                       { backgroundColor: getActivityColor(type) },
+                      newSchedule.activityType === type && { opacity: 1, borderWidth: 2, borderColor: theme.primary },
                     ]}
                     onPress={() => setNewSchedule({ ...newSchedule, activityType: type })}
                   >
-                    <Text style={styles.activityTypeButtonText}>
+                    <Text style={[styles.activityTypeButtonText, { color: '#fff' }]}>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
                     </Text>
                   </TouchableOpacity>
@@ -587,29 +589,29 @@ const ScheduleScreen = ({ navigation }) => {
 
             {/* Time Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Time</Text>
+              <Text style={[styles.sectionLabel, { color: theme.text }]}>Time</Text>
               <View style={styles.timeInputContainer}>
                 <TouchableOpacity
-                  style={styles.timePickerButton}
+                  style={[styles.timePickerButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                   onPress={() => openTimePicker('startTime')}
                   activeOpacity={0.85}
                 >
                   <View>
-                    <Text style={styles.timeLabel}>Start</Text>
-                    <Text style={styles.timePickerValue}>{formatTime(newSchedule.startTime)}</Text>
+                    <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>Start</Text>
+                    <Text style={[styles.timePickerValue, { color: theme.text }]}>{formatTime(newSchedule.startTime)}</Text>
                   </View>
-                  <Icon name="alarm" size={18} color="#4A90E2" />
+                  <Icon name="alarm" size={18} color={theme.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.timePickerButton}
+                  style={[styles.timePickerButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                   onPress={() => openTimePicker('endTime')}
                   activeOpacity={0.85}
                 >
                   <View>
-                    <Text style={styles.timeLabel}>End</Text>
-                    <Text style={styles.timePickerValue}>{formatTime(newSchedule.endTime)}</Text>
+                    <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>End</Text>
+                    <Text style={[styles.timePickerValue, { color: theme.text }]}>{formatTime(newSchedule.endTime)}</Text>
                   </View>
-                  <Icon name="schedule" size={18} color="#4A90E2" />
+                  <Icon name="schedule" size={18} color={theme.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -759,8 +761,8 @@ const ScheduleScreen = ({ navigation }) => {
                 <TouchableWithoutFeedback onPress={cancelTimePicker}>
                   <View style={styles.timePickerOverlay}>
                     <TouchableWithoutFeedback>
-                      <View style={styles.timePickerCard}>
-                        <Text style={styles.timePickerTitle}>Select time</Text>
+                      <View style={[styles.timePickerCard, { backgroundColor: theme.cardBackground }]}>
+                        <Text style={[styles.timePickerTitle, { color: theme.text }]}>Select time</Text>
                         <DateTimePicker
                           value={tempTime}
                           mode="time"
@@ -828,15 +830,12 @@ const ScheduleScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fb',
   },
   header: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   headerTop: {
     flexDirection: 'row',
@@ -846,25 +845,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#666',
   },
   todayButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f7ff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   daySelectorContainer: {
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   daySelector: {
     paddingVertical: 12,
@@ -878,11 +872,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderRadius: 12,
-    backgroundColor: '#f5f6f8',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'transparent',
     position: 'relative',
   },
   dayButtonContent: {
@@ -891,22 +883,18 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   selectedDayButton: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
-    shadowColor: '#4A90E2',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   todayDayButton: {
-    borderColor: '#4A90E2',
     borderWidth: 2,
   },
   dayButtonTextShort: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -914,10 +902,9 @@ const styles = StyleSheet.create({
   dayButtonDate: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
   },
   todayDayButtonText: {
-    color: '#4A90E2',
+    color: '#5A9FFF',
   },
   selectedDayButtonText: {
     color: '#fff',
@@ -938,7 +925,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   sessionCountBadgeSelected: {
-    backgroundColor: '#fff',
+    // Removed hardcoded backgroundColor - handled in JSX
   },
   sessionCountText: {
     fontSize: 10,
@@ -946,7 +933,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   sessionCountTextSelected: {
-    color: '#4A90E2',
+    color: '#5A9FFF',
   },
   scheduleScrollView: {
     flex: 1,
@@ -957,9 +944,7 @@ const styles = StyleSheet.create({
   },
   timeColumn: {
     width: 70,
-    backgroundColor: '#fff',
     borderRightWidth: 1,
-    borderRightColor: '#e8e9ed',
     paddingTop: 30,
   },
   timeMarker: {
@@ -967,11 +952,9 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingTop: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f1f3',
   },
   timeMarkerText: {
     fontSize: 11,
-    color: '#999',
     textAlign: 'right',
     fontWeight: '500',
   },
@@ -982,20 +965,17 @@ const styles = StyleSheet.create({
   },
   timeSlotsContainer: {
     flex: 1,
-    backgroundColor: '#fafbfc',
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
     minHeight: 900,
     borderWidth: 1,
-    borderColor: '#e8e9ed',
   },
   gridLine: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: '#f0f1f3',
   },
   timeSlotItem: {
     position: 'absolute',
@@ -1084,10 +1064,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4A90E2',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -1100,7 +1080,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 24,
     width: '90%',
@@ -1145,11 +1124,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#f5f6f8',
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#e8e9ed',
   },
   selectedDayOption: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
   },
   dayOptionText: {
     color: '#666',
@@ -1229,7 +1208,6 @@ const styles = StyleSheet.create({
   timePickerCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
@@ -1246,7 +1224,6 @@ const styles = StyleSheet.create({
   },
   timePickerControl: {
     alignSelf: 'stretch',
-    backgroundColor: '#fff',
   },
   timePickerActions: {
     flexDirection: 'row',
@@ -1263,7 +1240,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f6f8',
   },
   timePickerSaveButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
   },
   timePickerCancelText: {
     color: '#666',
@@ -1303,9 +1280,9 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   selectedSubjectNoneOption: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
-    shadowColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -1342,7 +1319,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f6f8',
     maxWidth: 140,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#e0e0e0',
   },
   taskNoneOption: {
     flexDirection: 'row',
@@ -1356,9 +1333,9 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   selectedTaskNoneOption: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
-    shadowColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -1373,8 +1350,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   selectedTaskOption: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
   },
   taskOptionText: {
     color: '#666',
@@ -1403,7 +1380,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   toggleButtonActive: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
   },
   toggleCircle: {
     width: 26,
@@ -1443,8 +1420,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   saveButton: {
-    backgroundColor: '#4A90E2',
-    shadowColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
@@ -1488,9 +1465,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafbfc',
   },
   selectedReminderMinutesOption: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
-    shadowColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
+    shadowColor: '#5A9FFF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

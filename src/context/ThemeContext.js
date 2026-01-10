@@ -49,45 +49,45 @@ export const lightTheme = {
 
 export const darkTheme = {
   // Background colors
-  background: '#121212',
-  cardBackground: '#1e1e1e',
-  modalBackground: '#2a2a2a',
-  inputBackground: '#2a2a2a',
+  background: '#0f0f0f',
+  cardBackground: '#1a1a1a',
+  modalBackground: '#252525',
+  inputBackground: '#252525',
   
   // Text colors
-  text: '#e8e8e8',
-  textSecondary: '#b0b0b0',
+  text: '#f5f5f5',
+  textSecondary: '#b8b8b8',
   textTertiary: '#888',
   
   // Border colors
-  border: '#333',
-  borderLight: '#2a2a2a',
-  inputBorder: '#444',
+  border: '#2a2a2a',
+  borderLight: '#1f1f1f',
+  inputBorder: '#3a3a3a',
   
   // Primary colors
-  primary: '#4A90E2',
-  primaryLight: '#1a3a5a',
+  primary: '#5A9FFF',
+  primaryLight: '#1e3a52',
   
   // Status colors
-  success: '#27ae60',
+  success: '#2ecc71',
   danger: '#e74c3c',
-  warning: '#e67e22',
-  info: '#2980b9',
+  warning: '#f39c12',
+  info: '#3498db',
   
   // Activity colors
-  classColor: '#8e44ad',
-  studyColor: '#2980b9',
-  breakColor: '#27ae60',
-  otherColor: '#d68910',
+  classColor: '#9b59b6',
+  studyColor: '#3498db',
+  breakColor: '#2ecc71',
+  otherColor: '#f39c12',
   
   // UI elements
-  shadow: 'rgba(0, 0, 0, 0.5)',
-  overlay: 'rgba(0, 0, 0, 0.7)',
-  disabled: '#7f8c8d',
+  shadow: 'rgba(0, 0, 0, 0.8)',
+  overlay: 'rgba(0, 0, 0, 0.85)',
+  disabled: '#666',
   
   // Chart colors
-  chartGrid: '#333',
-  chartText: '#b0b0b0',
+  chartGrid: '#2a2a2a',
+  chartText: '#b8b8b8',
 };
 
 export const ThemeProvider = ({ children }) => {

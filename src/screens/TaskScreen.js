@@ -223,13 +223,13 @@ const TasksScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Filter Buttons */}
-      <View style={styles.filterContainer}>
+      <View style={[styles.filterContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
         {['all', 'pending', 'completed'].map((filterType) => (
           <TouchableOpacity
             key={filterType}
             style={[
               styles.filterButton, 
-              { backgroundColor: theme.cardBackground, borderColor: theme.border },
+              { backgroundColor: theme.background, borderColor: theme.border },
               filter === filterType && { backgroundColor: theme.primary }
             ]}
             onPress={() => setFilter(filterType)}
@@ -250,7 +250,8 @@ const TasksScreen = ({ navigation }) => {
         data={tasks}
         renderItem={renderTaskItem}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
+        style={{ backgroundColor: theme.background }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="assignment" size={50} color={theme.textTertiary} />
@@ -321,33 +322,33 @@ const TasksScreen = ({ navigation }) => {
                   {/* Quick Date Buttons */}
                   <View style={styles.quickDateButtons}>
                     <TouchableOpacity
-                      style={[styles.quickDateButton, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date().toDateString() && styles.quickDateButtonActive]}
+                      style={[styles.quickDateButton, { backgroundColor: theme.background, borderColor: theme.border }, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date().toDateString() && { backgroundColor: theme.primary, borderColor: theme.primary }]}
                       onPress={() => setNewTask({...newTask, dueDate: new Date().toISOString()})}
                     >
-                      <Text style={[styles.quickDateButtonText, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date().toDateString() && styles.quickDateButtonTextActive]}>
+                      <Text style={[styles.quickDateButtonText, { color: theme.text }, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date().toDateString() && { color: '#fff' }]}>
                         Today
                       </Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
-                      style={[styles.quickDateButton, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date(Date.now() + 86400000).toDateString() && styles.quickDateButtonActive]}
+                      style={[styles.quickDateButton, { backgroundColor: theme.background, borderColor: theme.border }, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date(Date.now() + 86400000).toDateString() && { backgroundColor: theme.primary, borderColor: theme.primary }]}
                       onPress={() => {
                         const tomorrow = new Date();
                         tomorrow.setDate(tomorrow.getDate() + 1);
                         setNewTask({...newTask, dueDate: tomorrow.toISOString()});
                       }}
                     >
-                      <Text style={[styles.quickDateButtonText, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date(Date.now() + 86400000).toDateString() && styles.quickDateButtonTextActive]}>
+                      <Text style={[styles.quickDateButtonText, { color: theme.text }, newTask.dueDate && new Date(newTask.dueDate).toDateString() === new Date(Date.now() + 86400000).toDateString() && { color: '#fff' }]}>
                         Tomorrow
                       </Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
-                      style={styles.quickDateButton}
+                      style={[styles.quickDateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                       onPress={() => setShowDatePicker(true)}
                     >
-                      <Icon name="calendar-today" size={16} color="#4A90E2" />
-                      <Text style={styles.quickDateButtonText}>Pick Date</Text>
+                      <Icon name="calendar-today" size={16} color={theme.primary} />
+                      <Text style={[styles.quickDateButtonText, { color: theme.text }]}>Pick Date</Text>
                     </TouchableOpacity>
                   </View>
                   
@@ -355,7 +356,7 @@ const TasksScreen = ({ navigation }) => {
                     style={[styles.dueDateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                     onPress={() => setShowDatePicker(true)}
                   >
-                    <Icon name="calendar-today" size={20} color="#4A90E2" />
+                    <Icon name="calendar-today" size={20} color={theme.primary} />
                     <Text style={[styles.dueDateButtonText, { color: theme.text }]}>
                       {newTask.dueDate 
                         ? formatDate(newTask.dueDate)
@@ -384,14 +385,14 @@ const TasksScreen = ({ navigation }) => {
                         style={[
                           styles.priorityButton,
                           { backgroundColor: theme.background, borderColor: theme.border },
-                          newTask.priority === p && styles.priorityButtonActive
+                          newTask.priority === p && { backgroundColor: theme.primary, borderColor: theme.primary }
                         ]}
                         onPress={() => setNewTask({...newTask, priority: p})}
                       >
                         <Text style={[
                           styles.priorityButtonText,
                           { color: theme.text },
-                          newTask.priority === p && styles.priorityButtonTextActive
+                          newTask.priority === p && { color: '#fff' }
                         ]}>
                           {p.charAt(0).toUpperCase() + p.slice(1)}
                         </Text>
@@ -402,17 +403,17 @@ const TasksScreen = ({ navigation }) => {
                 
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
+                    style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.border, borderWidth: 1 }]}
                     onPress={() => {
                       Keyboard.dismiss();
                       setModalVisible(false);
                     }}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.createButton]}
+                    style={[styles.modalButton, styles.createButton, { backgroundColor: theme.primary }]}
                     onPress={handleCreateTask}
                   >
                     <Text style={styles.createButtonText}>Create</Text>
@@ -430,46 +431,38 @@ const TasksScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   filterContainer: {
     flexDirection: 'row',
     padding: 15,
-    backgroundColor: '#fff',
+    borderBottomWidth: 1,
   },
   filterButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 20,
     marginHorizontal: 5,
-    backgroundColor: '#f0f0f0',
     alignItems: 'center',
-  },
-  activeFilter: {
-    backgroundColor: '#4A90E2',
+    borderWidth: 1,
   },
   filterText: {
-    color: '#666',
     fontWeight: '500',
-  },
-  activeFilterText: {
-    color: '#fff',
   },
   listContent: {
     padding: 15,
   },
   taskItem: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
+    borderWidth: 1,
   },
   checkbox: {
     marginRight: 15,
@@ -481,7 +474,6 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 5,
   },
   completedTask: {
@@ -490,7 +482,6 @@ const styles = StyleSheet.create({
   },
   taskDescription: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 10,
   },
   taskMeta: {
@@ -499,8 +490,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   subjectTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
     marginRight: 8,
     marginBottom: 4,
@@ -511,8 +502,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   priorityTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
     marginRight: 8,
     marginBottom: 4,
@@ -525,7 +516,6 @@ const styles = StyleSheet.create({
   },
   dueDate: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 4,
   },
   emptyContainer: {
@@ -535,7 +525,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 10,
-    color: '#999',
     fontSize: 16,
   },
   addButton: {
@@ -545,14 +534,14 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowColor: '#5A9FFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 6,
   },
   modalContainer: {
     flex: 1,
@@ -563,9 +552,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '90%',
   },
@@ -578,14 +566,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     flex: 1,
     textAlign: 'center',
   },
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 8,
   },
   priorityContainer: {
@@ -605,8 +591,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priorityButtonActive: {
-    borderColor: '#4A90E2',
-    backgroundColor: '#4A90E2',
+    borderColor: '#5A9FFF',
+    backgroundColor: '#5A9FFF',
   },
   priorityButtonText: {
     fontSize: 14,
@@ -632,7 +618,6 @@ const styles = StyleSheet.create({
   dueDateButtonText: {
     marginLeft: 10,
     fontSize: 16,
-    color: '#333',
     flex: 1,
   },
   quickDateButtons: {
@@ -654,8 +639,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   quickDateButtonActive: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
+    borderColor: '#5A9FFF',
   },
   quickDateButtonText: {
     fontSize: 12,
@@ -672,7 +657,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     fontSize: 16,
-    color: '#333',
   },
   textArea: {
     height: 100,
@@ -697,7 +681,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   createButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
   },
   createButtonText: {
     color: '#fff',
@@ -712,7 +696,7 @@ const styles = StyleSheet.create({
   reminderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5A9FFF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
