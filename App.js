@@ -11,6 +11,7 @@ import notificationService from './src/services/notificationService.js';
 // Import screens
 import LoginScreen from './src/screens/LoginScreen.js';
 import RegisterScreen from './src/screens/RegisterScreen.js';
+import VerifyScreen from './src/screens/VerifyScreen.js';
 import TaskDetailScreen from './src/screens/TaskDetailScreen.js';
 import SettingsScreen from './src/screens/SettingsScreen.js';
 
@@ -57,6 +58,20 @@ function RootNavigator({ userToken, setUserToken }) {
               },
             }}
           />
+          <Stack.Screen 
+            name="Verify" 
+            component={VerifyScreen}
+            options={{ 
+              title: 'Verify Email',
+              headerStyle: {
+                backgroundColor: '#fff',
+              },
+              headerTintColor: '#333',
+              headerTitleStyle: {
+                fontWeight: 'bold',
+              },
+            }}
+          />
         </>
       ) : (
         // Main app screens - User is authenticated
@@ -91,7 +106,7 @@ function RootNavigator({ userToken, setUserToken }) {
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
-  const { user } = useAuth();
+  const { user, loadUser } = useAuth();
   const navigationRef = useRef(null);
   const notificationListener = useRef();
   const responseListener = useRef();
@@ -147,6 +162,8 @@ function AppContent() {
       try {
         const token = await AsyncStorage.getItem('userToken');
         setUserToken(token);
+        // Attempt to load user data if present
+        await loadUser();
       } catch (e) {
         console.error('Failed to load token', e);
       } finally {
@@ -159,13 +176,16 @@ function AppContent() {
 
   // Update userToken when user logs in/out
   useEffect(() => {
-    const updateToken = async () => {
+    const syncTokenWithUser = async () => {
       if (user) {
         const token = await AsyncStorage.getItem('userToken');
         setUserToken(token);
+      } else {
+        // If user is logged out, clear token state to show auth screens
+        setUserToken(null);
       }
     };
-    updateToken();
+    syncTokenWithUser();
   }, [user]);
 
   if (isLoading) {

@@ -131,7 +131,7 @@ const AnalyticsScreen = () => {
         name: item.subjectName,
         count: isFinite(item.count) ? Math.max(item.count, 0) : 0,
         color: item.subjectColor || getColorByIndex(index),
-        legendFontColor: '#7F7F7F',
+        legendFontColor: theme.textSecondary,
         legendFontSize: 12,
       }))
       .filter(item => item.count > 0);
@@ -194,7 +194,7 @@ const AnalyticsScreen = () => {
           style={[
             styles.timeRangeButton,
             { backgroundColor: theme.background, borderColor: theme.border },
-            timeRange === range && styles.activeTimeRangeButton,
+            timeRange === range && { backgroundColor: theme.primary, borderColor: theme.primary },
           ]}
           onPress={() => setTimeRange(range)}
         >
@@ -202,7 +202,7 @@ const AnalyticsScreen = () => {
             style={[
               styles.timeRangeButtonText,
               { color: theme.text },
-              timeRange === range && styles.activeTimeRangeButtonText,
+              timeRange === range && { color: '#fff' },
             ]}
           >
             {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -311,26 +311,26 @@ const AnalyticsScreen = () => {
     
     if (!data || data.length === 0) {
       return (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tasks by Subject</Text>
-          <View style={styles.emptyStateContainer}>
-            <Icon name="book" size={48} color="#ccc" />
-            <Text style={styles.emptyStateText}>No subject data available</Text>
-            <Text style={styles.emptyStateSubtext}>Add subjects and tasks to see distribution</Text>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Tasks by Subject</Text>
+          <View style={[styles.emptyStateContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <Icon name="book" size={48} color={theme.textTertiary} />
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No subject data available</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.textTertiary }]}>Add subjects and tasks to see distribution</Text>
           </View>
         </View>
       );
     }
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tasks by Subject</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Tasks by Subject</Text>
         <PieChart
           data={data}
           width={screenWidth - 40}
           height={200}
           chartConfig={{
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            color: (opacity = 1) => isDark ? `rgba(245, 245, 245, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
           }}
           accessor="count"
           backgroundColor="transparent"
@@ -346,8 +346,8 @@ const AnalyticsScreen = () => {
     if (!data) return null;
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weekly Study Hours</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Weekly Study Hours</Text>
         <BarChart
           data={data}
           width={screenWidth - 40}
@@ -373,8 +373,8 @@ const AnalyticsScreen = () => {
     if (!priorityData) return null;
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tasks by Priority</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Tasks by Priority</Text>
         <View style={styles.priorityDistribution}>
           {['high', 'medium', 'low'].map((priority) => (
             <View key={priority} style={styles.priorityItem}>
@@ -392,11 +392,11 @@ const AnalyticsScreen = () => {
                     },
                   ]}
                 />
-                <Text style={styles.priorityName}>
+                <Text style={[styles.priorityName, { color: theme.text }]}>
                   {priority.charAt(0).toUpperCase() + priority.slice(1)}
                 </Text>
               </View>
-              <Text style={styles.priorityCount}>
+              <Text style={[styles.priorityCount, { color: theme.text }]}>
                 {priorityData[priority] || 0} tasks
               </Text>
             </View>
@@ -410,17 +410,23 @@ const AnalyticsScreen = () => {
     if (overdueTasks.length === 0) return null;
 
     return (
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Overdue Tasks</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Overdue Tasks</Text>
           <Text style={styles.overdueCount}>{overdueTasks.length}</Text>
         </View>
         {overdueTasks.slice(0, 3).map((task) => (
-          <View key={task.id} style={styles.overdueTask}>
-            <Icon name="warning" size={20} color="#e74c3c" />
+          <View
+            key={task.id}
+            style={[
+              styles.overdueTask,
+              { backgroundColor: isDark ? '#2a1a1a' : '#fff5f5', borderLeftColor: theme.danger },
+            ]}
+          >
+            <Icon name="warning" size={20} color={theme.danger} />
             <View style={styles.overdueTaskInfo}>
-              <Text style={styles.overdueTaskTitle}>{task.title}</Text>
-              <Text style={styles.overdueTaskDate}>
+              <Text style={[styles.overdueTaskTitle, { color: theme.text }]}>{task.title}</Text>
+              <Text style={[styles.overdueTaskDate, { color: theme.danger }]}>
                 Due: {formatDateShort(task.dueDate)}
               </Text>
             </View>
@@ -435,14 +441,14 @@ const AnalyticsScreen = () => {
     if (workloadDays.length === 0) return null;
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Upcoming Workload</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Upcoming Workload</Text>
         {workloadDays.map((day) => (
-          <View key={day} style={styles.workloadDay}>
-            <Text style={styles.workloadDate}>
+          <View key={day} style={[styles.workloadDay, { borderBottomColor: theme.border }]}>
+            <Text style={[styles.workloadDate, { color: theme.text }]}>
               {moment(day).format('MMM D, YYYY')}
             </Text>
-            <Text style={styles.workloadCount}>
+            <Text style={[styles.workloadCount, { color: theme.primary }]}>
               {workload[day].length} tasks
             </Text>
           </View>
@@ -498,9 +504,9 @@ const AnalyticsScreen = () => {
         {/* Empty State */}
         {!analytics && (
           <View style={styles.emptyState}>
-            <Icon name="analytics" size={80} color="#ddd" />
-            <Text style={styles.emptyStateTitle}>No Data Yet</Text>
-            <Text style={styles.emptyStateText}>
+            <Icon name="analytics" size={80} color={theme.textTertiary} />
+            <Text style={[styles.emptyStateTitle, { color: theme.textSecondary }]}>No Data Yet</Text>
+            <Text style={[styles.emptyStateText, { color: theme.textTertiary }]}>
               Complete some tasks to see your analytics
             </Text>
           </View>

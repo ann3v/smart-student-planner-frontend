@@ -1,7 +1,7 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authService } from '../services/api';
+import { authService, setUnauthorizedHandler } from '../services/api';
 
 const AuthContext = createContext({});
 
@@ -26,9 +26,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true, user: userData };
     } catch (err) {
+      const requiresVerification = err.response?.data?.requiresVerification;
       const errorMessage = err.response?.data?.error || 'Login failed';
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, requiresVerification, email };
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +41,12 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await authService.register(email, password, name);
+
+      // New flow: backend sends requiresVerification without token
+      if (response.data?.requiresVerification) {
+        return { success: true, requiresVerification: true, email };
+      }
+
       const { user: userData, token } = response.data;
       
       await AsyncStorage.setItem('userToken', token);
@@ -49,6 +56,28 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: userData };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Registration failed';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyCode = async (email, code) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await authService.verifyCode(email, code);
+      const { user: userData, token } = response.data;
+
+      await AsyncStorage.setItem('userToken', token);
+      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+
+      setUser(userData);
+      return { success: true, user: userData };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || 'Verification failed';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -73,6 +102,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // React to any 401 unauthorized from API: force logout
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      logout();
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -81,6 +117,7 @@ export const AuthProvider = ({ children }) => {
         error,
         login,
         register,
+        verifyCode,
         logout,
         loadUser,
       }}

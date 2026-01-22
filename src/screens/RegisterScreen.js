@@ -61,11 +61,26 @@ const RegisterScreen = ({ navigation }) => {
     }
 
     const result = await register(formData.email, formData.password, formData.name);
+
+    if (result.success && result.requiresVerification) {
+      Alert.alert(
+        'Verify your email',
+        'We sent a 6-digit code to your email. Please verify your account before logging in.',
+        [
+          {
+            text: 'Enter Code',
+            onPress: () => navigation.replace('Verify', { email: formData.email }),
+          },
+        ]
+      );
+      return;
+    }
+
     if (result.success) {
       Alert.alert('Success', 'Account created successfully!', [
         {
           text: 'Continue',
-          onPress: () => navigation.replace('Dashboard'),
+          onPress: () => navigation.replace('Login'),
         },
       ]);
     } else {

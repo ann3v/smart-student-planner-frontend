@@ -11,6 +11,12 @@ const api = axios.create({
   },
 });
 
+// Allow app to react to unauthorized responses (e.g., force logout)
+let unauthorizedHandler = null;
+export const setUnauthorizedHandler = (fn) => {
+  unauthorizedHandler = typeof fn === 'function' ? fn : null;
+};
+
 // Request interceptor to add token
 api.interceptors.request.use(
   async (config) => {
@@ -32,7 +38,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       AsyncStorage.removeItem('userToken');
-      // Navigate to login (you'll need to handle this in your navigation)
+      AsyncStorage.removeItem('userData');
+      if (unauthorizedHandler) {
+        try {
+          unauthorizedHandler();
+        } catch {}
+      }
     }
     return Promise.reject(error);
   }
@@ -42,6 +53,7 @@ api.interceptors.response.use(
 export const authService = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   register: (email, password, name) => api.post('/auth/register', { email, password, name }),
+  verifyCode: (email, code) => api.post('/auth/verify-code', { email, code }),
   getProfile: () => api.get('/auth/profile'),
 };
 

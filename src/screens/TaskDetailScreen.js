@@ -399,7 +399,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
                     mode="date"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={handleDateChange}
-                    textColor="#333"
+                    textColor={theme.text}
                   />
                 )}
 
@@ -409,20 +409,20 @@ const TaskDetailScreen = ({ route, navigation }) => {
                     mode="time"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={handleTimeChange}
-                    textColor="#333"
+                    textColor={theme.text}
                   />
                 )}
               </View>
             ) : (
               <View style={styles.dateTimeDisplay}>
                 <Icon name="calendar-today" size={20} color={theme.primary} />
-                <Text style={styles.dateTimeText}>
+                <Text style={[styles.dateTimeText, { color: theme.text }]}>
                   {task.dueDate ? formatDateLocal(task.dueDate) : 'No due date'}
                 </Text>
                 {task.dueDate && (
                   <>
                     <Icon name="access-time" size={20} color={theme.primary} style={styles.timeIcon} />
-                    <Text style={styles.dateTimeText}>{formatTime(task.dueDate)}</Text>
+                    <Text style={[styles.dateTimeText, { color: theme.text }]}>{formatTime(task.dueDate)}</Text>
                   </>
                 )}
               </View>
@@ -431,8 +431,8 @@ const TaskDetailScreen = ({ route, navigation }) => {
 
           {/* Created Date */}
           <View style={styles.detailSection}>
-            <Text style={styles.detailLabel}>Created</Text>
-            <Text style={styles.detailValue}>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Created</Text>
+            <Text style={[styles.detailValue, { color: theme.text }]}>
               {formatDateLocal(task.createdAt)}
             </Text>
           </View>
@@ -479,7 +479,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
             {taskReminders.length > 0 ? (
               <View style={styles.remindersList}>
                 {taskReminders.map((reminder) => (
-                  <View key={reminder.id} style={[styles.reminderItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <View key={reminder.id} style={[styles.reminderItem, { backgroundColor: theme.background, borderColor: theme.border, borderLeftColor: theme.primary }]}>
                     <View style={styles.reminderInfo}>
                       <Icon name="notifications-active" size={18} color={theme.primary} />
                       <View style={styles.reminderDetails}>
@@ -546,7 +546,11 @@ const TaskDetailScreen = ({ route, navigation }) => {
                   </View>
 
                   {!task.dueDate && (
-                    <Text style={[styles.dueDataWarning, { color: theme.warning }]}>
+                    <Text style={[
+                      styles.dueDataWarning,
+                      { color: theme.warning, backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'transparent' },
+                      { backgroundColor: (theme.background === '#0f0f0f' ? 'rgba(243, 156, 18, 0.15)' : '#fff4e5') }
+                    ]}>
                       ⚠️ Please set a due date to schedule reminders
                     </Text>
                   )}

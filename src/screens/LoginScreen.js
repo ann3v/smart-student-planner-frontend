@@ -29,6 +29,15 @@ const LoginScreen = ({ navigation }) => {
     if (result.success) {
       // Navigation is handled by App.js based on token
     } else {
+      if (result.requiresVerification) {
+        Alert.alert('Verify your email', result.error || 'Account not verified. Check your email for the code.', [
+          {
+            text: 'Enter Code',
+            onPress: () => navigation.replace('Verify', { email }),
+          },
+        ]);
+        return;
+      }
       Alert.alert('Login Failed', result.error);
     }
   };
