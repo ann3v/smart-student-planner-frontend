@@ -147,10 +147,7 @@ const SettingsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
+            // Navigation will be handled automatically by App.js when user state changes
           },
         },
       ]

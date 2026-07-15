@@ -1,7 +1,26 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-const API_URL = 'http://192.168.0.108:5000/api'; 
+// API URL configuration:
+// - Android emulator uses 10.0.2.2 to reach host machine's localhost
+// - iOS simulator can use localhost directly
+// - Physical devices should use the actual machine IP or deployed server URL
+// - In production, this should be your deployed server URL
+const getDefaultApiUrl = () => {
+  if (__DEV__) {
+    // Development: use appropriate local address based on platform
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:5000/api';
+    }
+    return 'http://localhost:5000/api';
+  }
+  // Production: use deployed server URL
+  return 'https://your-production-server.com/api';
+};
+
+// Allow override via Expo Constants or manual config
+const API_URL = getDefaultApiUrl();
 
 
 const api = axios.create({

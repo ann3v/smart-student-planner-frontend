@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
 // Import screens
-import DashboardScreen from '../screens/DashboradScreen.js';
+import DashboardScreen from '../screens/DashboardScreen.js';
 import TasksScreen from '../screens/TaskScreen.js';
 import ScheduleScreen from '../screens/ScheduleScreen.js';
 import SubjectsScreen from '../screens/SubjectsScreen.js';

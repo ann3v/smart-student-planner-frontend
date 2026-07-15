@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext';
 
@@ -17,6 +18,7 @@ const LoginScreen = ({ navigation }) => {
   const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuth();
 
   const handleLogin = async () => {
@@ -64,15 +66,27 @@ const LoginScreen = ({ navigation }) => {
               editable={!isLoading}
             />
             
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
-              placeholder="Password"
-              placeholderTextColor={theme.textTertiary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              editable={!isLoading}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.passwordInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                placeholder="Password"
+                placeholderTextColor={theme.textTertiary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <MaterialIcons
+                  name={showPassword ? 'visibility' : 'visibility-off'}
+                  size={24}
+                  color={theme.textTertiary}
+                />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -142,6 +156,23 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
     fontSize: 16,
+  },
+  passwordContainer: {
+    position: 'relative',
+    marginBottom: 15,
+  },
+  passwordInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 15,
+    paddingRight: 50,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
   },
   button: {
     backgroundColor: '#4A90E2',
