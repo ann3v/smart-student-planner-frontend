@@ -50,8 +50,8 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
 
@@ -189,15 +189,15 @@ const RegisterScreen = ({ navigation }) => {
                 <Text style={styles.requirementsTitle}>Password must contain:</Text>
                 <View style={styles.requirementItem}>
                   <Icon
-                    name={formData.password.length >= 6 ? 'check-circle' : 'radio-button-unchecked'}
+                    name={formData.password.length >= 8 ? 'check-circle' : 'radio-button-unchecked'}
                     size={16}
-                    color={formData.password.length >= 6 ? '#27ae60' : '#999'}
+                    color={formData.password.length >= 8 ? '#27ae60' : '#999'}
                   />
                   <Text style={[
                     styles.requirementText,
-                    formData.password.length >= 6 && styles.requirementMet
+                    formData.password.length >= 8 && styles.requirementMet
                   ]}>
-                    At least 6 characters
+                    At least 8 characters
                   </Text>
                 </View>
                 <View style={styles.requirementItem}>

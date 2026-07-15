@@ -120,12 +120,10 @@ function AppContent() {
 
         // Set up notification event listeners
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          console.log('Notification received:', notification);
           // Handle notification received while app is in foreground
         });
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          console.log('Notification response:', response);
           const data = response.notification.request.content.data;
 
           // Navigate to relevant screen based on notification type
@@ -139,7 +137,7 @@ function AppContent() {
           }
         });
       } catch (error) {
-        console.error('Error setting up notifications:', error);
+        // Notification setup failed — app continues without notifications
       }
     };
 
@@ -165,6 +163,8 @@ function AppContent() {
         // Attempt to load user data if present
         await loadUser();
       } catch (e) {
+        // Token load failed — user will see login screen
+      } finally {
         console.error('Failed to load token', e);
       } finally {
         setIsLoading(false);

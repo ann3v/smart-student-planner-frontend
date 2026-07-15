@@ -61,7 +61,7 @@ const TasksScreen = ({ navigation }) => {
       const response = await taskService.getTasks(params);
       setTasks(response.data);
     } catch (error) {
-      console.error('Failed to load tasks:', error);
+      // Error handled silently — UI shows empty state
     }
   };
 
@@ -70,7 +70,7 @@ const TasksScreen = ({ navigation }) => {
       const response = await subjectService.getSubjects();
       setSubjects(response.data);
     } catch (error) {
-      console.error('Failed to load subjects:', error);
+      // Error handled silently
     }
   };
 
@@ -88,7 +88,7 @@ const TasksScreen = ({ navigation }) => {
       });
       setTaskReminders(reminderMap);
     } catch (error) {
-      console.error('Failed to load reminders:', error);
+      // Error handled silently
     }
   };
 
@@ -122,18 +122,8 @@ const TasksScreen = ({ navigation }) => {
     }
 
     try {
-      console.log('Creating task with data:', JSON.stringify(newTask, null, 2));
-      console.log('Task fields:', {
-        title: newTask.title,
-        description: newTask.description,
-        subjectId: newTask.subjectId,
-        priority: newTask.priority,
-        dueDate: newTask.dueDate,
-      });
-      
       const response = await taskService.createTask(newTask);
-      console.log('Task created successfully:', response.data);
-      
+
       setModalVisible(false);
       setNewTask({
         title: '',
@@ -146,11 +136,6 @@ const TasksScreen = ({ navigation }) => {
       loadTasks();
       loadTaskReminders();
     } catch (error) {
-      console.error('Failed to create task:', error);
-      console.error('Error status:', error.response?.status);
-      console.error('Error data:', error.response?.data);
-      console.error('Error message:', error.message);
-      console.error('Full error:', JSON.stringify(error, null, 2));
       Alert.alert('Error', error.response?.data?.error || 'Failed to create task');
     }
   };

@@ -8,6 +8,16 @@ const { sequelize } = require('./src/models');
 // Load environment variables
 dotenv.config();
 
+// ==================== STARTUP VALIDATION ====================
+
+// Fail fast if critical secrets are missing or still placeholders
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.includes('CHANGE_ME')) {
+  console.error('❌ FATAL: JWT_SECRET is missing or still set to placeholder.');
+  console.error('   Generate a secure secret: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  process.exit(1);
+}
+
 // Import routes
 const authRoutes = require('./src/routes/authRoutes');
 const taskRoutes = require('./src/routes/taskRoutes');
@@ -18,6 +28,10 @@ const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const app = express();
 
 // ==================== SECURITY MIDDLEWARE ====================
+
+// Trust proxy — needed when running behind a reverse proxy (nginx, load balancer)
+// so that req.ip and X-Forwarded-* headers are correctly handled by rate limiter
+app.set('trust proxy', 1);
 
 // Helmet: Secure HTTP headers (X-Frame-Options, X-XSS-Protection, CSP, etc.)
 app.use(helmet());
