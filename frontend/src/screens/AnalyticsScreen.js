@@ -20,6 +20,8 @@ import { analyticsService } from '../services/api';
 import moment from 'moment';
 import { formatDateShort } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
+import { FilterChips, StatCard, EmptyState } from '../components';
+import { TIME_RANGES, getPriorityColor } from '../utils/constants';
 
 const AnalyticsScreen = () => {
   const { theme, isDark } = useTheme();
@@ -187,53 +189,20 @@ const AnalyticsScreen = () => {
   };
 
   const renderTimeRangeSelector = () => (
-    <View style={[styles.timeRangeSelector, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
-      {['week', 'month', 'semester'].map((range) => (
-        <TouchableOpacity
-          key={range}
-          style={[
-            styles.timeRangeButton,
-            { backgroundColor: theme.background, borderColor: theme.border },
-            timeRange === range && { backgroundColor: theme.primary, borderColor: theme.primary },
-          ]}
-          onPress={() => setTimeRange(range)}
-        >
-          <Text
-            style={[
-              styles.timeRangeButtonText,
-              { color: theme.text },
-              timeRange === range && { color: '#fff' },
-            ]}
-          >
-            {range.charAt(0).toUpperCase() + range.slice(1)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+    <FilterChips
+      options={TIME_RANGES}
+      activeOption={timeRange}
+      onSelect={setTimeRange}
+    />
   );
 
   const renderStatsCards = () => {
     if (!analytics?.stats) return null;
-
     return (
       <View style={styles.statsContainer}>
-        <View style={[styles.statCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
-          <Icon name="assignment" size={24} color={theme.primary} />
-          <Text style={[styles.statNumber, { color: theme.text }]}>{analytics.stats.totalTasks}</Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Tasks</Text>
-        </View>
-        
-        <View style={[styles.statCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
-          <Icon name="check-circle" size={24} color="#27ae60" />
-          <Text style={[styles.statNumber, { color: theme.text }]}>{analytics.stats.completedTasks}</Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
-        </View>
-        
-        <View style={[styles.statCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
-          <Icon name="pending" size={24} color="#f39c12" />
-          <Text style={[styles.statNumber, { color: theme.text }]}>{analytics.stats.pendingTasks}</Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
-        </View>
+        <StatCard icon="assignment" iconColor={theme.primary} value={analytics.stats.totalTasks} label="Total Tasks" />
+        <StatCard icon="check-circle" iconColor="#27ae60" value={analytics.stats.completedTasks} label="Completed" />
+        <StatCard icon="pending" iconColor="#f39c12" value={analytics.stats.pendingTasks} label="Pending" />
       </View>
     );
   };
@@ -503,14 +472,12 @@ const AnalyticsScreen = () => {
 
         {/* Empty State */}
         {!analytics && (
-          <View style={styles.emptyState}>
-            <Icon name="analytics" size={80} color={theme.textTertiary} />
-            <Text style={[styles.emptyStateTitle, { color: theme.textSecondary }]}>No Data Yet</Text>
-            <Text style={[styles.emptyStateText, { color: theme.textTertiary }]}>
-              Complete some tasks to see your analytics
-            </Text>
-          </View>
-        )}
+          <EmptyState
+            icon="analytics"
+            title="No Data Yet"
+            subtitle="Complete some tasks to see your analytics"
+          />
+        )}}
       </ScrollView>
     </SafeAreaView>
   );

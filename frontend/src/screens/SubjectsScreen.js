@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { subjectService, taskService } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { FAB, SubjectCard, EmptyState, ColorPicker, ConfirmDialog } from '../components';
 
 const SubjectsScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -26,21 +27,6 @@ const SubjectsScreen = ({ navigation }) => {
     name: '',
     color: '#3498db',
   });
-
-  const colorPalette = [
-    '#3498db', // Blue
-    '#e74c3c', // Red
-    '#2ecc71', // Green
-    '#f39c12', // Orange
-    '#9b59b6', // Purple
-    '#1abc9c', // Teal
-    '#d35400', // Dark Orange
-    '#c0392b', // Dark Red
-    '#27ae60', // Dark Green
-    '#8e44ad', // Dark Purple
-    '#16a085', // Dark Teal
-    '#7f8c8d', // Gray
-  ];
 
   useEffect(() => {
     loadSubjects();
@@ -157,64 +143,14 @@ const SubjectsScreen = ({ navigation }) => {
 
   const renderSubjectItem = ({ item }) => {
     const taskCounts = getTaskCount(item.id);
-    
     return (
-      <TouchableOpacity
-        style={[styles.subjectCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
+      <SubjectCard
+        subject={item}
+        taskCounts={taskCounts}
         onPress={() => navigation.navigate('Tasks', { subjectId: item.id })}
-        onLongPress={() => handleEditSubject(item)}
-      >
-        {/* Color Indicator */}
-        <View style={[styles.colorIndicator, { backgroundColor: item.color }]} />
-
-        {/* Subject Info */}
-        <View style={styles.subjectInfo}>
-          <Text style={[styles.subjectName, { color: theme.text }]}>{item.name}</Text>
-          
-          {/* Task Counts */}
-          <View style={styles.taskCounts}>
-            <View style={styles.taskCountItem}>
-              <Text style={[styles.taskCountNumber, { color: theme.primary }]}>{taskCounts.total}</Text>
-              <Text style={[styles.taskCountLabel, { color: theme.textSecondary }]}>Total</Text>
-            </View>
-            
-            <View style={[styles.taskCountDivider, { backgroundColor: theme.border }]} />
-            
-            <View style={styles.taskCountItem}>
-              <Text style={[styles.taskCountNumber, { color: theme.success }]}>
-                {taskCounts.completed}
-              </Text>
-              <Text style={[styles.taskCountLabel, { color: theme.textSecondary }]}>Done</Text>
-            </View>
-            
-            <View style={[styles.taskCountDivider, { backgroundColor: theme.border }]} />
-            
-            <View style={styles.taskCountItem}>
-              <Text style={[styles.taskCountNumber, { color: theme.warning }]}>
-                {taskCounts.pending}
-              </Text>
-              <Text style={[styles.taskCountLabel, { color: theme.textSecondary }]}>Pending</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.subjectActions}>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.background }]}
-            onPress={() => handleEditSubject(item)}
-          >
-            <Icon name="edit" size={20} color={theme.primary} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.background }]}
-            onPress={() => handleDeleteSubject(item)}
-          >
-            <Icon name="delete" size={20} color="#e74c3c" />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+        onEdit={() => handleEditSubject(item)}
+        onDelete={() => handleDeleteSubject(item)}
+      />
     );
   };
 
@@ -234,26 +170,16 @@ const SubjectsScreen = ({ navigation }) => {
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="menu-book" size={60} color={theme.textTertiary} />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Subjects Yet</Text>
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              Add your first subject to get started
-            </Text>
-          </View>
+          <EmptyState
+            icon="menu-book"
+            title="No Subjects Yet"
+            subtitle="Add your first subject to get started"
+          />
         }
       />
 
       {/* Add Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          resetForm();
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+      <FAB onPress={() => { resetForm(); setModalVisible(true); }} />
 
       {/* Subject Modal */}
       <Modal
@@ -287,23 +213,7 @@ const SubjectsScreen = ({ navigation }) => {
             {/* Color Selection */}
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Color</Text>
-              <View style={styles.colorGrid}>
-                {colorPalette.map((color) => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.colorOption,
-                      { backgroundColor: color },
-                      newSubject.color === color && styles.selectedColorOption,
-                    ]}
-                    onPress={() => setNewSubject({ ...newSubject, color })}
-                  >
-                    {newSubject.color === color && (
-                      <Icon name="check" size={20} color="#fff" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <ColorPicker selectedColor={newSubject.color} onColorSelect={(color) => setNewSubject({ ...newSubject, color })} />
             </View>
 
             {/* Color Preview */}

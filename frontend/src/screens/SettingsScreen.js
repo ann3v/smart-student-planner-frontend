@@ -17,6 +17,7 @@ import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext.js';
 import { authService } from '../services/api';
 import notificationService from '../services/notificationService';
+import { SettingsRow, ThemeSelector } from '../components';
 
 const SettingsScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
@@ -177,28 +178,11 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const renderSettingItem = (icon, label, value, onToggle) => (
-    <View style={[styles.settingItem, { borderBottomColor: theme.borderLight }]}>
-      <View style={styles.settingLeft}>
-        <Icon name={icon} size={24} color="#4A90E2" />
-        <Text style={[styles.settingLabel, { color: theme.text }]}>{label}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: '#ddd', true: '#4A90E2' }}
-        thumbColor="#fff"
-      />
-    </View>
+    <SettingsRow icon={icon} label={label} value={value} onToggle={onToggle} />
   );
 
-  const renderActionItem = (icon, label, onPress, color = '#333', showArrow = true) => (
-    <TouchableOpacity style={[styles.actionItem, { borderBottomColor: theme.borderLight }]} onPress={onPress}>
-      <View style={styles.actionLeft}>
-        <Icon name={icon} size={24} color={color} />
-        <Text style={[styles.actionLabel, { color: isDark ? (color === '#333' ? theme.text : color) : color }]}>{label}</Text>
-      </View>
-      {showArrow && <Icon name="chevron-right" size={24} color={theme.textTertiary} />}
-    </TouchableOpacity>
+  const renderActionItem = (icon, label, onPress, color, showArrow = true) => (
+    <SettingsRow icon={icon} label={label} onPress={onPress} color={color} showArrow={showArrow} />
   );
 
   return (
@@ -290,50 +274,7 @@ const SettingsScreen = ({ navigation }) => {
         {/* Appearance */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Appearance</Text>
-          <View style={styles.themeSelector}>
-            <TouchableOpacity
-              style={[
-                styles.themeOption,
-                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder },
-                themeMode === 'light' && styles.themeOptionSelected
-              ]}
-              onPress={() => setTheme('light')}
-            >
-              <Icon name="wb-sunny" size={24} color={themeMode === 'light' ? '#4A90E2' : theme.textSecondary} />
-              <Text style={[
-                styles.themeOptionText,
-                { color: themeMode === 'light' ? '#4A90E2' : theme.textSecondary }
-              ]}>Light</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeOption,
-                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder },
-                themeMode === 'dark' && styles.themeOptionSelected
-              ]}
-              onPress={() => setTheme('dark')}
-            >
-              <Icon name="nightlight-round" size={24} color={themeMode === 'dark' ? '#4A90E2' : theme.textSecondary} />
-              <Text style={[
-                styles.themeOptionText,
-                { color: themeMode === 'dark' ? '#4A90E2' : theme.textSecondary }
-              ]}>Dark</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeOption,
-                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder },
-                themeMode === 'system' && styles.themeOptionSelected
-              ]}
-              onPress={() => setTheme('system')}
-            >
-              <Icon name="phone-android" size={24} color={themeMode === 'system' ? '#4A90E2' : theme.textSecondary} />
-              <Text style={[
-                styles.themeOptionText,
-                { color: themeMode === 'system' ? '#4A90E2' : theme.textSecondary }
-              ]}>System</Text>
-            </TouchableOpacity>
-          </View>
+          <ThemeSelector />
         </View>
 
         {/* Account Actions */}

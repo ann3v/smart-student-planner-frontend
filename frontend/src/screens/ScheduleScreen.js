@@ -19,6 +19,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { scheduleService, taskService, subjectService } from '../services/api';
 import notificationService from '../services/notificationService';
 import { useTheme } from '../context/ThemeContext';
+import { FAB, DaySelector, ScheduleBlock, EmptyState, TimePickerModal } from '../components';
+import { getActivityColor, DAYS_OF_WEEK } from '../utils/constants';
 
 const ScheduleScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -190,16 +192,6 @@ const ScheduleScreen = ({ navigation }) => {
   const getSubjectColor = (subjectId) => {
     const subject = subjects.find(s => s.id === subjectId);
     return subject ? subject.color : '#3498db';
-  };
-
-  const getActivityColor = (activityType) => {
-    switch (activityType) {
-      case 'class': return '#9b59b6';
-      case 'study': return '#3498db';
-      case 'break': return '#2ecc71';
-      case 'other': return '#f39c12';
-      default: return '#95a5a6';
-    }
   };
 
   const formatTime = (timeString) => {
@@ -502,16 +494,8 @@ const ScheduleScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Enhanced Add Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          resetForm();
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      {/* Add Button */}
+      <FAB onPress={() => { resetForm(); setModalVisible(true); }} />
 
       {/* Schedule Item Modal */}
       <Modal

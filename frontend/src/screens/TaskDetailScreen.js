@@ -19,6 +19,8 @@ import notificationService from '../services/notificationService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
+import { PriorityBadge, SubjectBadge, ConfirmDialog } from '../components';
+import { getPriorityColor } from '../utils/constants';
 
 const TaskDetailScreen = ({ route, navigation }) => {
   const { theme } = useTheme();
@@ -166,7 +168,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const formatDateLocal = (dateString) => {
+  const getSubjectColor = (subjectId) => {\n    const subject = subjects.find(s => s.id === subjectId);\n    return subject ? subject.color : '#3498db';\n  };\n\n  const getSubjectName = (subjectId) => {\n    const subject = subjects.find(s => s.id === subjectId);\n    return subject ? subject.name : 'No subject';\n  };\n\n  const formatDateLocal = (dateString) => {
     if (!dateString) return 'No due date';
     const date = parseDate(dateString);
     if (!date) return 'Invalid date';
@@ -185,25 +187,6 @@ const TaskDetailScreen = ({ route, navigation }) => {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return '#e74c3c';
-      case 'medium': return '#f39c12';
-      case 'low': return '#27ae60';
-      default: return '#95a5a6';
-    }
-  };
-
-  const getSubjectColor = (subjectId) => {
-    const subject = subjects.find(s => s.id === subjectId);
-    return subject ? subject.color : '#3498db';
-  };
-
-  const getSubjectName = (subjectId) => {
-    const subject = subjects.find(s => s.id === subjectId);
-    return subject ? subject.name : 'No subject';
   };
 
   const handleDateChange = (event, selectedDate) => {

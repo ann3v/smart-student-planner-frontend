@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-const StatCard = ({ icon, iconColor, value, label, onPress, style }) => {
+const StatCard = ({ icon, iconColor, value, label, valueColor, onPress, style }) => {
   const { theme } = useTheme();
 
   const Wrapper = onPress ? TouchableOpacity : View;
@@ -15,7 +15,7 @@ const StatCard = ({ icon, iconColor, value, label, onPress, style }) => {
       activeOpacity={onPress ? 0.7 : 1}
     >
       {icon && <MaterialIcons name={icon} size={24} color={iconColor || theme.primary} />}
-      <Text style={[styles.value, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.value, { color: valueColor || theme.text }]}>{value}</Text>
       <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
     </Wrapper>
   );

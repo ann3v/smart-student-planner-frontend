@@ -12,7 +12,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext.js';
 import { taskService, scheduleService, analyticsService } from '../services/api';
-import { MaterialIcons } from '@expo/vector-icons'; 
+import { MaterialIcons } from '@expo/vector-icons';
+import { StatCard, SectionHeader } from '../components';
+import { getPriorityColor } from '../utils/constants';
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -66,17 +68,7 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   const getDayName = () => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[new Date().getDay()];
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return '#e74c3c';
-      case 'medium': return '#f39c12';
-      case 'low': return '#27ae60';
-      default: return '#95a5a6';
-    }
+    return DAYS_OF_WEEK[new Date().getDay()];
   };
 
   return (
@@ -101,10 +93,10 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats.totalTasks}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Tasks</Text>
-          </View>
+          <StatCard value={stats.totalTasks} label="Total Tasks" valueColor={theme.primary} />
+          <StatCard value={stats.completedTasks} label="Completed" valueColor={theme.success} />
+          <StatCard value={stats.pendingTasks} label="Pending" valueColor={theme.warning} />
+        </View>
           <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text style={[styles.statNumber, { color: theme.success }]}>{stats.completedTasks}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>

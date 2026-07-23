@@ -21,6 +21,8 @@ import { taskService, subjectService } from '../services/api';
 import notificationService from '../services/notificationService';
 import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
+import { FAB, FilterChips, TaskCard, EmptyState } from '../components';
+import { TASK_FILTERS } from '../utils/constants';
 
 const TasksScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -141,94 +143,22 @@ const TasksScreen = ({ navigation }) => {
   };
 
   const renderTaskItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.taskItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
+    <TaskCard
+      task={item}
       onPress={() => navigation.navigate('TaskDetail', { taskId: item.id })}
-    >
-      <TouchableOpacity
-        style={styles.checkbox}
-        onPress={() => handleToggleCompletion(item.id)}
-      >
-        <Icon
-          name={item.completed ? 'check-circle' : 'radio-button-unchecked'}
-          size={24}
-          color={item.completed ? '#27ae60' : theme.textTertiary}
-        />
-      </TouchableOpacity>
-      
-      <View style={styles.taskContent}>
-        <View style={styles.taskTitleContainer}>
-          <Text style={[styles.taskTitle, { color: theme.text }, item.completed && styles.completedTask]}>
-            {item.title}
-          </Text>
-          {taskReminders[item.id] && taskReminders[item.id].length > 0 && (
-            <View style={styles.reminderBadge}>
-              <Icon name="notifications-active" size={14} color="#fff" />
-              <Text style={styles.reminderBadgeText}>{taskReminders[item.id].length}</Text>
-            </View>
-          )}
-        </View>
-        
-        {item.description ? (
-          <Text style={[styles.taskDescription, { color: theme.textSecondary }]} numberOfLines={2}>
-            {item.description}
-          </Text>
-        ) : null}
-        
-        <View style={styles.taskMeta}>
-          {item.Subject && (
-            <View style={[styles.subjectTag, { backgroundColor: item.Subject.color || '#3498db' }]}>
-              <Text style={styles.subjectText}>{item.Subject.name}</Text>
-            </View>
-          )}
-          
-          <View style={[styles.priorityTag, { backgroundColor: getPriorityColor(item.priority) }]}>
-            <Text style={styles.priorityText}>{item.priority}</Text>
-          </View>
-          
-          {item.dueDate && (
-            <Text style={[styles.dueDate, { color: theme.textSecondary }]}>
-              {formatDateShort(item.dueDate)}
-            </Text>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+      onToggleComplete={() => handleToggleCompletion(item.id)}
+      reminderCount={taskReminders[item.id]?.length || 0}
+    />
   );
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return '#e74c3c';
-      case 'medium': return '#f39c12';
-      case 'low': return '#27ae60';
-      default: return '#95a5a6';
-    }
-  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Filter Buttons */}
-      <View style={[styles.filterContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
-        {['all', 'pending', 'completed'].map((filterType) => (
-          <TouchableOpacity
-            key={filterType}
-            style={[
-              styles.filterButton, 
-              { backgroundColor: theme.background, borderColor: theme.border },
-              filter === filterType && { backgroundColor: theme.primary }
-            ]}
-            onPress={() => setFilter(filterType)}
-          >
-            <Text style={[
-              styles.filterText, 
-              { color: theme.text },
-              filter === filterType && { color: '#fff' }
-            ]}>
-              {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Filter Chips */}
+      <FilterChips
+        options={TASK_FILTERS}
+        activeOption={filter}
+        onSelect={setFilter}
+      />
 
       {/* Task List */}
       <FlatList
@@ -238,20 +168,16 @@ const TasksScreen = ({ navigation }) => {
         contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
         style={{ backgroundColor: theme.background }}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="assignment" size={50} color={theme.textTertiary} />
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tasks found</Text>
-          </View>
+          <EmptyState
+            icon="assignment"
+            title="No tasks found"
+            subtitle="Tap + to create your first task"
+          />
         }
       />
 
       {/* Add Task Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Icon name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+      <FAB onPress={() => setModalVisible(true)} />
 
       {/* Create Task Modal */}
       <Modal
