@@ -168,7 +168,17 @@ const TaskDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const getSubjectColor = (subjectId) => {\n    const subject = subjects.find(s => s.id === subjectId);\n    return subject ? subject.color : '#3498db';\n  };\n\n  const getSubjectName = (subjectId) => {\n    const subject = subjects.find(s => s.id === subjectId);\n    return subject ? subject.name : 'No subject';\n  };\n\n  const formatDateLocal = (dateString) => {
+  const getSubjectColor = (subjectId) => {
+    const subject = subjects.find(s => s.id === subjectId);
+    return subject ? subject.color : '#3498db';
+  };
+
+  const getSubjectName = (subjectId) => {
+    const subject = subjects.find(s => s.id === subjectId);
+    return subject ? subject.name : 'No subject';
+  };
+
+  const formatDateLocal = (dateString) => {
     if (!dateString) return 'No due date';
     const date = parseDate(dateString);
     if (!date) return 'Invalid date';

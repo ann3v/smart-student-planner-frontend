@@ -14,7 +14,7 @@ import { useTheme } from '../context/ThemeContext.js';
 import { taskService, scheduleService, analyticsService } from '../services/api';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatCard, SectionHeader } from '../components';
-import { getPriorityColor } from '../utils/constants';
+import { getPriorityColor, DAYS_OF_WEEK } from '../utils/constants';
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -96,15 +96,6 @@ const DashboardScreen = ({ navigation }) => {
           <StatCard value={stats.totalTasks} label="Total Tasks" valueColor={theme.primary} />
           <StatCard value={stats.completedTasks} label="Completed" valueColor={theme.success} />
           <StatCard value={stats.pendingTasks} label="Pending" valueColor={theme.warning} />
-        </View>
-          <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-            <Text style={[styles.statNumber, { color: theme.success }]}>{stats.completedTasks}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-            <Text style={[styles.statNumber, { color: theme.warning }]}>{stats.pendingTasks}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
-          </View>
         </View>
 
         {/* Quick Actions */}

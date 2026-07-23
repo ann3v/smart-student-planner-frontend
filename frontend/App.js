@@ -164,7 +164,6 @@ function AppContent() {
         await loadUser();
       } catch (e) {
         // Token load failed — user will see login screen
-      } finally {
         console.error('Failed to load token', e);
       } finally {
         setIsLoading(false);

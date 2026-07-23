@@ -477,7 +477,7 @@ const AnalyticsScreen = () => {
             title="No Data Yet"
             subtitle="Complete some tasks to see your analytics"
           />
-        )}}
+        )}
       </ScrollView>
     </SafeAreaView>
   );
