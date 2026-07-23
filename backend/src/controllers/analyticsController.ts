@@ -1,56 +1,30 @@
-const { Task, Subject, Schedule, sequelize } = require('../models');
-const { Op, QueryTypes } = require('sequelize');
-
-// Helper function to sanitize analytics data
-const sanitizeAnalyticsData = (data) => {
-  return {
-    ...data,
-    completionRate: isFinite(data.completionRate) ? data.completionRate : 0,
-    tasksPerDay: (data.tasksPerDay || []).map(item => ({
-      ...item,
-      count: parseInt(item.count) || 0,
-      date: item.date || new Date().toISOString().split('T')[0]
-    })),
-    tasksByPriority: (data.tasksByPriority || []).map(item => ({
-      ...item,
-      count: parseInt(item.count) || 0
-    })),
-    tasksBySubject: (data.tasksBySubject || []).map(item => ({
-      ...item,
-      count: parseInt(item.count) || 0,
-      subjectName: item.subjectName || 'Uncategorized',
-      subjectColor: item.subjectColor || '#808080'
-    })),
-    studyHoursPerDay: (data.studyHoursPerDay || []).map(item => ({
-      ...item,
-      hours: parseFloat(item.hours) || 0,
-      dayOfWeek: item.dayOfWeek || 0
-    }))
-  };
-};
+import { Request, Response } from 'express';
+import { Op, QueryTypes } from 'sequelize';
+import { Task, Subject, Schedule, sequelize } from '../models';
+import { AuthRequest } from '../middleware/auth';
 
 // Get productivity analytics
-const getProductivityAnalytics = async (req, res) => {
+const getProductivityAnalytics = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { startDate, endDate } = req.query;
-    
-    const where = {
-      userId: req.user.id,
+
+    const where: Record<string, unknown> = {
+      userId: req.user!.id,
       completed: true
     };
 
+    let dateFilter: Record<string, unknown>;
     if (startDate && endDate) {
-      where.createdAt = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+      dateFilter = {
+        [Op.between]: [new Date(startDate as string), new Date(endDate as string)]
       };
     } else {
-      // Default to last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      where.createdAt = {
-        [Op.gte]: thirtyDaysAgo
-      };
+      dateFilter = { [Op.gte]: thirtyDaysAgo };
     }
+
+    where.createdAt = dateFilter;
 
     // Tasks completed per day
     const tasksPerDay = await Task.findAll({
@@ -66,14 +40,12 @@ const getProductivityAnalytics = async (req, res) => {
     // Task completion rate
     const totalTasks = await Task.count({
       where: {
-        userId: req.user.id,
-        createdAt: where.createdAt
+        userId: req.user!.id,
+        createdAt: dateFilter
       }
     });
 
-    const completedTasks = await Task.count({
-      where
-    });
+    const completedTasks = await Task.count({ where });
 
     const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
@@ -84,21 +56,25 @@ const getProductivityAnalytics = async (req, res) => {
         [sequelize.fn('COUNT', '*'), 'count']
       ],
       where: {
-        userId: req.user.id,
-        createdAt: where.createdAt
+        userId: req.user!.id,
+        createdAt: dateFilter
       },
       group: ['priority']
     });
 
-    // Tasks by subject
+    // Tasks by subject (raw SQL)
+    const dateFilterAny = dateFilter as unknown as Record<string, unknown>;
+    const startDateVal = (dateFilterAny[Op.between as unknown as string] as unknown[])?.[0] as Date || dateFilterAny[Op.gte as unknown as string] as Date || new Date(0);
+    const endDateVal = (dateFilterAny[Op.between as unknown as string] as unknown[])?.[1] as Date || new Date();
+
     const tasksBySubjectRaw = await sequelize.query(
-      `SELECT 
+      `SELECT
         s."name" as "subjectName",
         s."color" as "subjectColor",
         COUNT(*) as count
       FROM tasks t
       LEFT JOIN subjects s ON t."subjectId" = s.id
-      WHERE t."userId" = :userId 
+      WHERE t."userId" = :userId
         AND t."createdAt" >= :startDate
         AND t."createdAt" <= :endDate
         AND t.completed = true
@@ -106,34 +82,33 @@ const getProductivityAnalytics = async (req, res) => {
       ORDER BY count DESC`,
       {
         replacements: {
-          userId: req.user.id,
-          startDate: where.createdAt?.[Op.between]?.[0] || where.createdAt?.[Op.gte],
-          endDate: where.createdAt?.[Op.between]?.[1] || new Date()
+          userId: req.user!.id,
+          startDate: startDateVal as Date,
+          endDate: endDateVal as Date
         },
         type: QueryTypes.SELECT
       }
     );
 
-    const tasksBySubject = tasksBySubjectRaw.map(item => ({
+    const tasksBySubject = (tasksBySubjectRaw as Array<Record<string, unknown>>).map(item => ({
       subjectName: item.subjectName || 'Uncategorized',
       subjectColor: item.subjectColor || '#808080',
-      count: parseInt(item.count) || 0
+      count: parseInt(item.count as string) || 0
     }));
 
-    // Study hours per day - simplified version to avoid PostgreSQL specific syntax issues
-    const studyHoursPerDay = [];
-    
+    // Study hours per day
+    const studyHoursPerDay: Array<{ dayOfWeek: number; hours: number }> = [];
+
     try {
       const schedules = await Schedule.findAll({
         where: {
-          userId: req.user.id,
+          userId: req.user!.id,
           activityType: 'study'
         },
         attributes: ['dayOfWeek', 'startTime', 'endTime']
       });
 
-      // Calculate hours per day
-      const hoursByDay = {};
+      const hoursByDay: Record<number, number> = {};
       for (let i = 0; i < 7; i++) {
         hoursByDay[i] = 0;
       }
@@ -142,46 +117,37 @@ const getProductivityAnalytics = async (req, res) => {
         if (schedule.startTime && schedule.endTime) {
           const start = new Date(schedule.startTime);
           const end = new Date(schedule.endTime);
-          const hours = (end - start) / (1000 * 60 * 60); // Convert ms to hours
+          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
           if (hours > 0) {
             hoursByDay[schedule.dayOfWeek] += hours;
           }
         }
       });
 
-      // Format the response
       for (let day = 0; day < 7; day++) {
         studyHoursPerDay.push({
           dayOfWeek: day,
-          hours: Math.round(hoursByDay[day] * 10) / 10 // Round to 1 decimal place
+          hours: Math.round(hoursByDay[day] * 10) / 10
         });
       }
     } catch (scheduleError) {
-      console.error('Error calculating study hours:', scheduleError);
-      // Fallback: return zero hours for all days
+      console.error('Error calculating study hours:', (scheduleError as Error).message);
       for (let day = 0; day < 7; day++) {
-        studyHoursPerDay.push({
-          dayOfWeek: day,
-          hours: 0
-        });
+        studyHoursPerDay.push({ dayOfWeek: day, hours: 0 });
       }
     }
 
     const responseData = {
       tasksPerDay: tasksPerDay.map(item => ({
-        date: item.dataValues?.date || item.date,
-        count: parseInt(item.dataValues?.count || item.count) || 0
+        date: (item.dataValues as unknown as Record<string, unknown>).date || (item as unknown as Record<string, unknown>).date,
+        count: parseInt((item.dataValues as unknown as Record<string, unknown>).count as string) || 0
       })),
       completionRate: Math.round(completionRate * 100) / 100,
       tasksByPriority: tasksByPriority.map(item => ({
-        priority: item.dataValues?.priority || item.priority,
-        count: parseInt(item.dataValues?.count || item.count) || 0
+        priority: (item.dataValues as unknown as Record<string, unknown>).priority || (item as unknown as Record<string, unknown>).priority,
+        count: parseInt((item.dataValues as unknown as Record<string, unknown>).count as string) || 0
       })),
-      tasksBySubject: (tasksBySubject || []).map(item => ({
-        subjectName: item.subjectName || 'Uncategorized',
-        subjectColor: item.subjectColor || '#808080',
-        count: parseInt(item.count) || 0
-      })),
+      tasksBySubject: tasksBySubject,
       studyHoursPerDay: studyHoursPerDay,
       stats: {
         totalTasks,
@@ -198,14 +164,14 @@ const getProductivityAnalytics = async (req, res) => {
 };
 
 // Get overdue tasks
-const getOverdueTasks = async (req, res) => {
+const getOverdueTasks = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const overdueTasks = await Task.findAll({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         completed: false,
         dueDate: {
           [Op.lt]: today
@@ -223,14 +189,14 @@ const getOverdueTasks = async (req, res) => {
 };
 
 // Get workload distribution
-const getWorkloadDistribution = async (req, res) => {
+const getWorkloadDistribution = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
 
     const tasks = await Task.findAll({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         completed: false,
         dueDate: {
           [Op.lte]: nextWeek
@@ -240,8 +206,7 @@ const getWorkloadDistribution = async (req, res) => {
       order: [['dueDate', 'ASC']]
     });
 
-    // Group by day
-    const workloadByDay = {};
+    const workloadByDay: Record<string, typeof tasks> = {};
     tasks.forEach(task => {
       if (task.dueDate) {
         const day = task.dueDate.toISOString().split('T')[0];
@@ -259,7 +224,7 @@ const getWorkloadDistribution = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getProductivityAnalytics,
   getOverdueTasks,
   getWorkloadDistribution

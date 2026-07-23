@@ -1,18 +1,17 @@
-const { Task, Subject } = require('../models');
-const { Op } = require('sequelize');
+import { Request, Response } from 'express';
+import { Op } from 'sequelize';
+import { Task, Subject } from '../models';
+import { AuthRequest } from '../middleware/auth';
 
 // Create task
-const createTask = async (req, res) => {
+const createTask = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const taskData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user!.id
     };
 
-    const task = await Task.create(taskData, {
-      include: [Subject]
-    });
-
+    const task = await Task.create(taskData);
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create task' });
@@ -20,27 +19,27 @@ const createTask = async (req, res) => {
 };
 
 // Get all tasks for user
-const getTasks = async (req, res) => {
+const getTasks = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { completed, subjectId, priority, startDate, endDate } = req.query;
-    
-    const where = { userId: req.user.id };
-    
+
+    const where: Record<string, unknown> = { userId: req.user!.id };
+
     if (completed !== undefined) {
       where.completed = completed === 'true';
     }
-    
+
     if (subjectId) {
       where.subjectId = subjectId;
     }
-    
+
     if (priority) {
       where.priority = priority;
     }
-    
+
     if (startDate && endDate) {
       where.dueDate = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+        [Op.between]: [new Date(startDate as string), new Date(endDate as string)]
       };
     }
 
@@ -57,18 +56,19 @@ const getTasks = async (req, res) => {
 };
 
 // Get single task
-const getTask = async (req, res) => {
+const getTask = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const task = await Task.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       },
       include: [Subject]
     });
 
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      res.status(404).json({ error: 'Task not found' });
+      return;
     }
 
     res.json(task);
@@ -78,17 +78,18 @@ const getTask = async (req, res) => {
 };
 
 // Update task
-const updateTask = async (req, res) => {
+const updateTask = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const task = await Task.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      res.status(404).json({ error: 'Task not found' });
+      return;
     }
 
     await task.update(req.body);
@@ -101,17 +102,18 @@ const updateTask = async (req, res) => {
 };
 
 // Delete task
-const deleteTask = async (req, res) => {
+const deleteTask = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const task = await Task.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      res.status(404).json({ error: 'Task not found' });
+      return;
     }
 
     await task.destroy();
@@ -122,17 +124,18 @@ const deleteTask = async (req, res) => {
 };
 
 // Toggle task completion
-const toggleTaskCompletion = async (req, res) => {
+const toggleTaskCompletion = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const task = await Task.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      res.status(404).json({ error: 'Task not found' });
+      return;
     }
 
     task.completed = !task.completed;
@@ -145,7 +148,7 @@ const toggleTaskCompletion = async (req, res) => {
 };
 
 // Get today's tasks
-const getTodayTasks = async (req, res) => {
+const getTodayTasks = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -154,7 +157,7 @@ const getTodayTasks = async (req, res) => {
 
     const tasks = await Task.findAll({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         dueDate: {
           [Op.between]: [today, tomorrow]
         }
@@ -170,7 +173,7 @@ const getTodayTasks = async (req, res) => {
 };
 
 // Get upcoming tasks
-const getUpcomingTasks = async (req, res) => {
+const getUpcomingTasks = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -179,7 +182,7 @@ const getUpcomingTasks = async (req, res) => {
 
     const tasks = await Task.findAll({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         dueDate: {
           [Op.between]: [today, nextWeek]
         },
@@ -195,7 +198,7 @@ const getUpcomingTasks = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createTask,
   getTasks,
   getTask,

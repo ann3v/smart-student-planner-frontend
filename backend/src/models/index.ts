@@ -1,8 +1,8 @@
-const sequelize = require('../config/database');
-const User = require('./user');
-const Subject = require('./subject');
-const Task = require('./task');
-const Schedule = require('./schedule');
+import sequelize from '../config/database';
+import User from './user';
+import Subject from './subject';
+import Task from './task';
+import Schedule from './schedule';
 
 // Define associations
 User.hasMany(Subject, { foreignKey: 'userId', onDelete: 'CASCADE' });
@@ -23,10 +23,10 @@ Schedule.belongsTo(Subject, { foreignKey: 'subjectId' });
 Task.hasMany(Schedule, { foreignKey: 'taskId', onDelete: 'SET NULL' });
 Schedule.belongsTo(Task, { foreignKey: 'taskId' });
 
-module.exports = {
+export {
   sequelize,
   User,
   Subject,
   Task,
-  Schedule
+  Schedule,
 };

@@ -1,11 +1,13 @@
-const { Subject, Task, sequelize } = require('../models');
+import { Request, Response } from 'express';
+import { Subject, Task } from '../models';
+import { AuthRequest } from '../middleware/auth';
 
 // Create subject
-const createSubject = async (req, res) => {
+const createSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const subject = await Subject.create({
       ...req.body,
-      userId: req.user.id
+      userId: req.user!.id
     });
 
     res.status(201).json(subject);
@@ -15,10 +17,10 @@ const createSubject = async (req, res) => {
 };
 
 // Get all subjects for user
-const getSubjects = async (req, res) => {
+const getSubjects = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const subjects = await Subject.findAll({
-      where: { userId: req.user.id },
+      where: { userId: req.user!.id },
       order: [['name', 'ASC']]
     });
 
@@ -29,18 +31,19 @@ const getSubjects = async (req, res) => {
 };
 
 // Get subject with tasks
-const getSubjectWithTasks = async (req, res) => {
+const getSubjectWithTasks = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const subject = await Subject.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       },
       include: [Task]
     });
 
     if (!subject) {
-      return res.status(404).json({ error: 'Subject not found' });
+      res.status(404).json({ error: 'Subject not found' });
+      return;
     }
 
     res.json(subject);
@@ -50,17 +53,18 @@ const getSubjectWithTasks = async (req, res) => {
 };
 
 // Update subject
-const updateSubject = async (req, res) => {
+const updateSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const subject = await Subject.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!subject) {
-      return res.status(404).json({ error: 'Subject not found' });
+      res.status(404).json({ error: 'Subject not found' });
+      return;
     }
 
     await subject.update(req.body);
@@ -71,17 +75,18 @@ const updateSubject = async (req, res) => {
 };
 
 // Delete subject
-const deleteSubject = async (req, res) => {
+const deleteSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const subject = await Subject.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!subject) {
-      return res.status(404).json({ error: 'Subject not found' });
+      res.status(404).json({ error: 'Subject not found' });
+      return;
     }
 
     await subject.destroy();
@@ -91,7 +96,7 @@ const deleteSubject = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createSubject,
   getSubjects,
   getSubjectWithTasks,

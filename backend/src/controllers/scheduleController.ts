@@ -1,12 +1,13 @@
-const { Schedule, Subject, Task } = require('../models');
-const { Op } = require('sequelize');
+import { Request, Response } from 'express';
+import { Schedule, Subject, Task } from '../models';
+import { AuthRequest } from '../middleware/auth';
 
 // Create schedule item
-const createSchedule = async (req, res) => {
+const createSchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const scheduleData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user!.id
     };
 
     const schedule = await Schedule.create(scheduleData);
@@ -21,12 +22,12 @@ const createSchedule = async (req, res) => {
 };
 
 // Get schedule for user
-const getSchedule = async (req, res) => {
+const getSchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { dayOfWeek, startDate, endDate } = req.query;
-    
-    const where = { userId: req.user.id };
-    
+    const { dayOfWeek } = req.query;
+
+    const where: Record<string, unknown> = { userId: req.user!.id };
+
     if (dayOfWeek !== undefined) {
       where.dayOfWeek = dayOfWeek;
     }
@@ -44,20 +45,20 @@ const getSchedule = async (req, res) => {
 };
 
 // Get today's schedule
-const getTodaySchedule = async (req, res) => {
+const getTodaySchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const today = new Date();
-    const dayOfWeek = today.getDay(); // 0-6 (Sunday-Saturday)
+    const dayOfWeek = today.getDay();
 
     const schedule = await Schedule.findAll({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         dayOfWeek
       },
       include: [Subject, Task],
       order: [['startTime', 'ASC']]
     });
-    
+
     res.json(schedule);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch today\'s schedule' });
@@ -65,16 +66,15 @@ const getTodaySchedule = async (req, res) => {
 };
 
 // Get weekly schedule
-const getWeeklySchedule = async (req, res) => {
+const getWeeklySchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const schedule = await Schedule.findAll({
-      where: { userId: req.user.id },
+      where: { userId: req.user!.id },
       include: [Subject, Task],
       order: [['dayOfWeek', 'ASC'], ['startTime', 'ASC']]
     });
 
-    // Group by day of week
-    const weeklySchedule = {};
+    const weeklySchedule: Record<number, typeof schedule> = {};
     for (let i = 0; i < 7; i++) {
       weeklySchedule[i] = schedule.filter(item => item.dayOfWeek === i);
     }
@@ -86,17 +86,18 @@ const getWeeklySchedule = async (req, res) => {
 };
 
 // Update schedule item
-const updateSchedule = async (req, res) => {
+const updateSchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const schedule = await Schedule.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!schedule) {
-      return res.status(404).json({ error: 'Schedule item not found' });
+      res.status(404).json({ error: 'Schedule item not found' });
+      return;
     }
 
     await schedule.update(req.body);
@@ -111,17 +112,18 @@ const updateSchedule = async (req, res) => {
 };
 
 // Delete schedule item
-const deleteSchedule = async (req, res) => {
+const deleteSchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const schedule = await Schedule.findOne({
       where: {
         id: req.params.id,
-        userId: req.user.id
+        userId: req.user!.id
       }
     });
 
     if (!schedule) {
-      return res.status(404).json({ error: 'Schedule item not found' });
+      res.status(404).json({ error: 'Schedule item not found' });
+      return;
     }
 
     await schedule.destroy();
@@ -131,7 +133,7 @@ const deleteSchedule = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createSchedule,
   getSchedule,
   getTodaySchedule,

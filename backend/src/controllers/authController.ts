@@ -1,8 +1,10 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
-const { User } = require('../models');
-const { AUTH, ERRORS } = require('../config/constants');
+import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import nodemailer from 'nodemailer';
+import { User } from '../models';
+import { AUTH, ERRORS } from '../config/constants';
+import { AuthRequest } from '../middleware/auth';
 
 const {
   CODE_TTL_MINUTES,
@@ -13,10 +15,10 @@ const {
   JWT_EXPIRY,
 } = AUTH;
 
-const generateVerificationCode = () =>
+const generateVerificationCode = (): string =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-const buildTransporter = () => {
+const buildTransporter = (): nodemailer.Transporter => {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
@@ -28,7 +30,7 @@ const buildTransporter = () => {
   });
 };
 
-const sendVerificationEmail = async (to, code) => {
+const sendVerificationEmail = async (to: string, code: string): Promise<void> => {
   const transporter = buildTransporter();
   const from = process.env.SMTP_FROM || 'no-reply@example.com';
   await transporter.sendMail({
@@ -41,24 +43,24 @@ const sendVerificationEmail = async (to, code) => {
 
 // ==================== REGISTER ====================
 
-const register = async (req, res) => {
+const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, name } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      res.status(400).json({ error: 'Email and password are required' });
+      return;
     }
 
     if (password.length < MIN_PASSWORD_LENGTH) {
-      return res
-        .status(400)
-        .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+      res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+      return;
     }
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      // Generic message prevents email enumeration
-      return res.status(400).json({ error: 'Registration failed' });
+      res.status(400).json({ error: 'Registration failed' });
+      return;
     }
 
     const passwordHash = await User.hashPassword(password);
@@ -82,7 +84,7 @@ const register = async (req, res) => {
     try {
       await sendVerificationEmail(email, code);
     } catch (mailErr) {
-      console.error('Failed to send verification email:', mailErr.message);
+      console.error('Failed to send verification email:', (mailErr as Error).message);
     }
 
     res.status(201).json({
@@ -90,42 +92,44 @@ const register = async (req, res) => {
       requiresVerification: true,
     });
   } catch (error) {
-    console.error('Registration error:', error.message);
+    console.error('Registration error:', (error as Error).message);
     res.status(500).json({ error: ERRORS.GENERIC });
   }
 };
 
 // ==================== LOGIN ====================
 
-const login = async (req, res) => {
+const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      res.status(400).json({ error: 'Email and password are required' });
+      return;
     }
 
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(401).json({ error: ERRORS.INVALID_CREDENTIALS });
+      res.status(401).json({ error: ERRORS.INVALID_CREDENTIALS });
+      return;
     }
 
-    // Account lockout check
     if (user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
       const minutesRemaining = Math.ceil(
-        (new Date(user.lockoutUntil) - new Date()) / 60000
+        (new Date(user.lockoutUntil).getTime() - new Date().getTime()) / 60000
       );
-      return res.status(429).json({
+      res.status(429).json({
         error: `Account temporarily locked. Try again in ${minutesRemaining} minute(s).`,
         lockedUntil: user.lockoutUntil,
       });
+      return;
     }
 
     const isValidPassword = await user.checkPassword(password);
     if (!isValidPassword) {
       const failedAttempts = (user.failedLoginAttempts || 0) + 1;
-      const updates = { failedLoginAttempts: failedAttempts };
+      const updates: { failedLoginAttempts: number; lockoutUntil?: Date } = { failedLoginAttempts: failedAttempts };
 
       if (failedAttempts >= MAX_LOGIN_ATTEMPTS) {
         updates.lockoutUntil = new Date(
@@ -134,22 +138,23 @@ const login = async (req, res) => {
       }
 
       await user.update(updates);
-      return res.status(401).json({ error: ERRORS.INVALID_CREDENTIALS });
+      res.status(401).json({ error: ERRORS.INVALID_CREDENTIALS });
+      return;
     }
 
     if (!user.isVerified) {
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Account not verified. Check your email for the code.',
         requiresVerification: true,
       });
+      return;
     }
 
-    // Reset failed attempts on success
     await user.update({ failedLoginAttempts: 0, lockoutUntil: null });
 
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET!,
       { expiresIn: JWT_EXPIRY }
     );
 
@@ -158,60 +163,61 @@ const login = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error('Login error:', error.message);
+    console.error('Login error:', (error as Error).message);
     res.status(500).json({ error: ERRORS.GENERIC });
   }
 };
 
 // ==================== VERIFY CODE ====================
 
-const verifyCode = async (req, res) => {
+const verifyCode = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, code } = req.body;
 
     if (!email || !code) {
-      return res.status(400).json({ error: 'Email and code are required' });
+      res.status(400).json({ error: 'Email and code are required' });
+      return;
     }
 
     if (!/^\d{6}$/.test(code)) {
-      return res.status(400).json({ error: 'Invalid verification code format' });
+      res.status(400).json({ error: 'Invalid verification code format' });
+      return;
     }
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(400).json({ error: 'Verification failed' });
+      res.status(400).json({ error: 'Verification failed' });
+      return;
     }
 
-    // Clear expired lockouts
     if (user.lockoutUntil && new Date(user.lockoutUntil) < new Date()) {
       await user.update({ lockoutUntil: null, failedVerificationAttempts: 0 });
     }
 
     if (user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
       const minutesRemaining = Math.ceil(
-        (new Date(user.lockoutUntil) - new Date()) / 60000
+        (new Date(user.lockoutUntil).getTime() - new Date().getTime()) / 60000
       );
-      return res.status(429).json({
+      res.status(429).json({
         error: `Too many verification attempts. Try again in ${minutesRemaining} minute(s).`,
       });
+      return;
     }
 
     if (!user.verificationCodeHash || !user.verificationExpiresAt) {
-      return res
-        .status(400)
-        .json({ error: 'No verification code found. Please register again.' });
+      res.status(400).json({ error: 'No verification code found. Please register again.' });
+      return;
     }
 
     if (new Date(user.verificationExpiresAt) < new Date()) {
-      return res
-        .status(400)
-        .json({ error: 'Verification code expired. Please register again.' });
+      res.status(400).json({ error: 'Verification code expired. Please register again.' });
+      return;
     }
 
     const isMatch = await bcrypt.compare(code, user.verificationCodeHash);
     if (!isMatch) {
       const failedAttempts = (user.failedVerificationAttempts || 0) + 1;
-      const updates = { failedVerificationAttempts: failedAttempts };
+      const updates: { failedVerificationAttempts: number; lockoutUntil?: Date } = { failedVerificationAttempts: failedAttempts };
 
       if (failedAttempts >= MAX_VERIFY_ATTEMPTS) {
         updates.lockoutUntil = new Date(
@@ -220,7 +226,8 @@ const verifyCode = async (req, res) => {
       }
 
       await user.update(updates);
-      return res.status(400).json({ error: 'Invalid verification code' });
+      res.status(400).json({ error: 'Invalid verification code' });
+      return;
     }
 
     user.isVerified = true;
@@ -232,7 +239,7 @@ const verifyCode = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET!,
       { expiresIn: JWT_EXPIRY }
     );
 
@@ -242,21 +249,21 @@ const verifyCode = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error('Verification error:', error.message);
+    console.error('Verification error:', (error as Error).message);
     res.status(500).json({ error: ERRORS.GENERIC });
   }
 };
 
 // ==================== GET PROFILE ====================
 
-const getProfile = async (req, res) => {
+const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   res.json({
     user: {
-      id: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
+      id: req.user!.id,
+      email: req.user!.email,
+      name: req.user!.name,
     },
   });
 };
 
-module.exports = { register, login, getProfile, verifyCode };
+export { register, login, getProfile, verifyCode };
