@@ -5,12 +5,21 @@ import { AuthRequest } from '../middleware/auth';
 // Create schedule item
 const createSchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const scheduleData = {
-      ...req.body,
-      userId: req.user!.id
-    };
+    const { dayOfWeek, startTime, endTime, title, activityType, subjectId, taskId, isRecurring, reminderEnabled, reminderMinutesBefore } = req.body;
 
-    const schedule = await Schedule.create(scheduleData);
+    const schedule = await Schedule.create({
+      dayOfWeek,
+      startTime,
+      endTime,
+      title,
+      activityType,
+      subjectId,
+      taskId,
+      isRecurring,
+      reminderEnabled,
+      reminderMinutesBefore,
+      userId: req.user!.id,
+    });
     const scheduleWithRelations = await Schedule.findByPk(schedule.id, {
       include: [Subject, Task]
     });
@@ -100,7 +109,20 @@ const updateSchedule = async (req: AuthRequest, res: Response): Promise<void> =>
       return;
     }
 
-    await schedule.update(req.body);
+    const { dayOfWeek, startTime, endTime, title, activityType, subjectId, taskId, isRecurring, reminderEnabled, reminderMinutesBefore } = req.body;
+
+    await schedule.update({
+      ...(dayOfWeek !== undefined && { dayOfWeek }),
+      ...(startTime !== undefined && { startTime }),
+      ...(endTime !== undefined && { endTime }),
+      ...(title !== undefined && { title }),
+      ...(activityType !== undefined && { activityType }),
+      ...(subjectId !== undefined && { subjectId }),
+      ...(taskId !== undefined && { taskId }),
+      ...(isRecurring !== undefined && { isRecurring }),
+      ...(reminderEnabled !== undefined && { reminderEnabled }),
+      ...(reminderMinutesBefore !== undefined && { reminderMinutesBefore }),
+    });
     const updatedSchedule = await Schedule.findByPk(schedule.id, {
       include: [Subject, Task]
     });

@@ -6,12 +6,17 @@ import { AuthRequest } from '../middleware/auth';
 // Create task
 const createTask = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const taskData = {
-      ...req.body,
-      userId: req.user!.id
-    };
+    const { title, description, subjectId, priority, dueDate, estimatedDuration } = req.body;
 
-    const task = await Task.create(taskData);
+    const task = await Task.create({
+      title,
+      description,
+      subjectId,
+      priority,
+      dueDate,
+      estimatedDuration,
+      userId: req.user!.id,
+    });
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create task' });
@@ -92,7 +97,19 @@ const updateTask = async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    await task.update(req.body);
+    const { title, description, subjectId, priority, dueDate, estimatedDuration, completed, reminderEnabled, reminderMinutesBefore } = req.body;
+
+    await task.update({
+      ...(title !== undefined && { title }),
+      ...(description !== undefined && { description }),
+      ...(subjectId !== undefined && { subjectId }),
+      ...(priority !== undefined && { priority }),
+      ...(dueDate !== undefined && { dueDate }),
+      ...(estimatedDuration !== undefined && { estimatedDuration }),
+      ...(completed !== undefined && { completed }),
+      ...(reminderEnabled !== undefined && { reminderEnabled }),
+      ...(reminderMinutesBefore !== undefined && { reminderMinutesBefore }),
+    });
     await task.reload({ include: [Subject] });
 
     res.json(task);
