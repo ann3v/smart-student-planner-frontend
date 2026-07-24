@@ -115,9 +115,9 @@ const getProductivityAnalytics = async (req: AuthRequest, res: Response): Promis
 
       schedules.forEach(schedule => {
         if (schedule.startTime && schedule.endTime) {
-          const start = new Date(schedule.startTime);
-          const end = new Date(schedule.endTime);
-          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+          const [startH, startM] = schedule.startTime.split(':').map(Number);
+          const [endH, endM] = schedule.endTime.split(':').map(Number);
+          const hours = (endH * 60 + endM - startH * 60 - startM) / 60;
           if (hours > 0) {
             hoursByDay[schedule.dayOfWeek] += hours;
           }

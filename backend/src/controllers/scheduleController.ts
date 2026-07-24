@@ -53,6 +53,28 @@ const getSchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
+// Get single schedule item by ID
+const getScheduleById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const schedule = await Schedule.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user!.id
+      },
+      include: [Subject, Task]
+    });
+
+    if (!schedule) {
+      res.status(404).json({ error: 'Schedule item not found' });
+      return;
+    }
+
+    res.json(schedule);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch schedule item' });
+  }
+};
+
 // Get today's schedule
 const getTodaySchedule = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -158,6 +180,7 @@ const deleteSchedule = async (req: AuthRequest, res: Response): Promise<void> =>
 export {
   createSchedule,
   getSchedule,
+  getScheduleById,
   getTodaySchedule,
   getWeeklySchedule,
   updateSchedule,
