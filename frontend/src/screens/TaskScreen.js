@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,23 +15,25 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { taskService, subjectService } from '../services/api';
-import notificationService from '../services/notificationService';
-import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
+import { taskService } from '../services/api';
+import { formatDate, parseDate } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
+import { useFocusRefresh } from '../hooks/useFocusRefresh';
+import { useTasks } from '../hooks/useTasks';
+import { useSubjects } from '../hooks/useSubjects';
+import { useNotifications } from '../hooks/useNotifications';
 import { FAB, FilterChips, TaskCard, EmptyState } from '../components';
 import { TASK_FILTERS } from '../utils/constants';
 
 const TasksScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const [tasks, setTasks] = useState([]);
-  const [subjects, setSubjects] = useState([]);
+  const { tasks, loadTasks } = useTasks();
+  const { subjects, loadSubjects } = useSubjects();
+  const { reminders } = useNotifications();
   const [filter, setFilter] = useState('all'); // all, pending, completed
   const [modalVisible, setModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [taskReminders, setTaskReminders] = useState({});
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -40,64 +42,34 @@ const TasksScreen = ({ navigation }) => {
     dueDate: null,
   });
 
+  // Load tasks when filter changes
+  const loadFilteredTasks = useCallback(() => {
+    loadTasks(filter === 'all' ? undefined : { completed: filter === 'completed' });
+  }, [filter, loadTasks]);
+
+  // Load subjects once on mount
   useEffect(() => {
-    loadTasks();
     loadSubjects();
-    loadTaskReminders();
-  }, [filter]);
+  }, [loadSubjects]);
 
-  // Refresh tasks when screen comes into focus (e.g., after deleting a task)
-  useFocusEffect(
-    useCallback(() => {
-      loadTasks();
-      loadTaskReminders();
-    }, [filter])
-  );
+  // Refresh tasks when screen comes into focus — no duplicate calls
+  useFocusRefresh(loadFilteredTasks, [loadFilteredTasks]);
 
-  const loadTasks = async () => {
-    try {
-      const params = {};
-      if (filter === 'pending') params.completed = false;
-      if (filter === 'completed') params.completed = true;
-      
-      const response = await taskService.getTasks(params);
-      setTasks(response.data);
-    } catch (error) {
-      // Error handled silently — UI shows empty state
+  // Build reminder map from notifications hook
+  const taskReminders = {};
+  reminders.forEach(reminder => {
+    if (reminder.taskId) {
+      if (!taskReminders[reminder.taskId]) {
+        taskReminders[reminder.taskId] = [];
+      }
+      taskReminders[reminder.taskId].push(reminder);
     }
-  };
-
-  const loadSubjects = async () => {
-    try {
-      const response = await subjectService.getSubjects();
-      setSubjects(response.data);
-    } catch (error) {
-      // Error handled silently
-    }
-  };
-
-  const loadTaskReminders = async () => {
-    try {
-      const allReminders = await notificationService.getStoredNotifications();
-      const reminderMap = {};
-      allReminders.forEach(reminder => {
-        if (reminder.taskId) {
-          if (!reminderMap[reminder.taskId]) {
-            reminderMap[reminder.taskId] = [];
-          }
-          reminderMap[reminder.taskId].push(reminder);
-        }
-      });
-      setTaskReminders(reminderMap);
-    } catch (error) {
-      // Error handled silently
-    }
-  };
+  });
 
   const handleToggleCompletion = async (taskId) => {
     try {
       await taskService.toggleTaskCompletion(taskId);
-      loadTasks(); // Reload tasks
+      loadFilteredTasks();
     } catch (error) {
       Alert.alert('Error', 'Failed to update task');
     }
@@ -135,8 +107,7 @@ const TasksScreen = ({ navigation }) => {
         dueDate: null,
       });
       Keyboard.dismiss();
-      loadTasks();
-      loadTaskReminders();
+      loadFilteredTasks();
     } catch (error) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to create task');
     }
