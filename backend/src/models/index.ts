@@ -11,7 +11,7 @@ Subject.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Task, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Task.belongsTo(User, { foreignKey: 'userId' });
 
-Subject.hasMany(Task, { foreignKey: 'subjectId', onDelete: 'CASCADE' });
+Subject.hasMany(Task, { foreignKey: 'subjectId', onDelete: 'SET NULL' });
 Task.belongsTo(Subject, { foreignKey: 'subjectId' });
 
 User.hasMany(Schedule, { foreignKey: 'userId', onDelete: 'CASCADE' });
