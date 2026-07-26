@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,58 +8,40 @@ import {
   SafeAreaView,
   RefreshControl,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext.js';
-import { taskService, scheduleService, analyticsService } from '../services/api';
+import { useFocusRefresh } from '../hooks/useFocusRefresh';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { taskService, scheduleService } from '../services/api';
 import { MaterialIcons } from '@expo/vector-icons';
-import { StatCard, SectionHeader } from '../components';
+import { StatCard, SectionHeader, EmptyState } from '../components';
 import { getPriorityColor, DAYS_OF_WEEK } from '../utils/constants';
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { analytics, loadAnalytics } = useAnalytics();
   const [refreshing, setRefreshing] = useState(false);
   const [todayTasks, setTodayTasks] = useState([]);
-  const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [todaySchedule, setTodaySchedule] = useState([]);
-  const [stats, setStats] = useState({
-    totalTasks: 0,
-    completedTasks: 0,
-    pendingTasks: 0,
-  });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      const [tasksRes, upcomingRes, scheduleRes, analyticsRes] = await Promise.all([
+      const [tasksRes, scheduleRes] = await Promise.all([
         taskService.getTodayTasks(),
-        taskService.getUpcomingTasks(),
         scheduleService.getTodaySchedule(),
-        analyticsService.getProductivityAnalytics(),
       ]);
 
       setTodayTasks(tasksRes.data);
-      setUpcomingTasks(upcomingRes.data);
       setTodaySchedule(scheduleRes.data);
-
-      if (analyticsRes.data.stats) {
-        setStats(analyticsRes.data.stats);
-      }
+      loadAnalytics();
     } catch (error) {
       // Error handled silently — UI shows empty states
     }
-  };
+  }, [loadAnalytics]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // Refresh data when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
-  );
+  // Single hook replaces both useEffect([]) and useFocusEffect — no duplicate calls
+  useFocusRefresh(loadData, [loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -69,6 +51,12 @@ const DashboardScreen = ({ navigation }) => {
 
   const getDayName = () => {
     return DAYS_OF_WEEK[new Date().getDay()];
+  };
+
+  const stats = analytics?.stats || {
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
   };
 
   return (
@@ -135,15 +123,18 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Today's Tasks */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Tasks</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Tasks')}>
-              <Text style={[styles.seeAll, { color: theme.primary }]}>See All</Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader
+            title="Today's Tasks"
+            actionLabel="See All"
+            onAction={() => navigation.navigate('Tasks')}
+          />
           
           {todayTasks.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tasks for today</Text>
+            <EmptyState
+              icon="assignment"
+              title="No tasks for today"
+              subtitle="Tap + to create your first task"
+            />
           ) : (
             todayTasks.slice(0, 3).map(task => (
               <TouchableOpacity
@@ -172,15 +163,18 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Today's Schedule */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Schedule</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Schedule')}>
-              <Text style={[styles.seeAll, { color: theme.primary }]}>See All</Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader
+            title="Today's Schedule"
+            actionLabel="See All"
+            onAction={() => navigation.navigate('Schedule')}
+          />
           
           {todaySchedule.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No schedule for today</Text>
+            <EmptyState
+              icon="calendar-today"
+              title="No schedule for today"
+              subtitle="Add your classes and study sessions"
+            />
           ) : (
             todaySchedule.slice(0, 3).map(item => (
               <View key={item.id} style={[styles.scheduleItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
@@ -229,45 +223,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, 
     marginTop: 10 
   },
-  statCard: { 
-    padding: 15, 
-    borderRadius: 12, 
-    alignItems: 'center', 
-    flex: 1, 
-    marginHorizontal: 5, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.08, 
-    shadowRadius: 4, 
-    elevation: 2,
-    borderWidth: 1,
-  },
-  statNumber: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-  },
-  statLabel: { 
-    fontSize: 12, 
-    marginTop: 5 
-  },
   section: { 
     marginTop: 20, 
     paddingHorizontal: 20, 
     paddingVertical: 15,
     borderTopWidth: 1,
   },
-  sectionHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 15 
-  },
   sectionTitle: { 
     fontSize: 18, 
     fontWeight: 'bold', 
-  },
-  seeAll: { 
-    fontSize: 14 
   },
   actionsGrid: { 
     flexDirection: 'row', 
@@ -310,11 +274,6 @@ const styles = StyleSheet.create({
   taskSubject: { 
     fontSize: 12, 
     marginTop: 2 
-  },
-  emptyText: { 
-    textAlign: 'center', 
-    fontStyle: 'italic', 
-    paddingVertical: 20 
   },
   scheduleItem: { 
     flexDirection: 'row', 
