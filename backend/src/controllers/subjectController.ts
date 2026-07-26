@@ -5,9 +5,12 @@ import { AuthRequest } from '../middleware/auth';
 // Create subject
 const createSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const { name, color } = req.body;
+
     const subject = await Subject.create({
-      ...req.body,
-      userId: req.user!.id
+      name,
+      color,
+      userId: req.user!.id,
     });
 
     res.status(201).json(subject);
@@ -67,7 +70,12 @@ const updateSubject = async (req: AuthRequest, res: Response): Promise<void> => 
       return;
     }
 
-    await subject.update(req.body);
+    const { name, color } = req.body;
+
+    await subject.update({
+      ...(name !== undefined && { name }),
+      ...(color !== undefined && { color }),
+    });
     res.json(subject);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update subject' });
