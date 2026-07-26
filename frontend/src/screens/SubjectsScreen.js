@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,64 +10,37 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
-import { subjectService, taskService } from '../services/api';
+import { taskService } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
-import { FAB, SubjectCard, EmptyState, ColorPicker, ConfirmDialog } from '../components';
+import { useFocusRefresh } from '../hooks/useFocusRefresh';
+import { useSubjects } from '../hooks/useSubjects';
+import { useForm } from '../hooks/useForm';
+import { FAB, SubjectCard, EmptyState, ColorPicker } from '../components';
 
 const SubjectsScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const [subjects, setSubjects] = useState([]);
-  const [tasksBySubject, setTasksBySubject] = useState({});
+  const { subjects, loadSubjects } = useSubjects();
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
-  const [newSubject, setNewSubject] = useState({
-    name: '',
-    color: '#3498db',
-  });
+  const form = useForm({ name: '', color: '#3498db' });
 
-  useEffect(() => {
-    loadSubjects();
-  }, []);
-
-  // Refresh subjects when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadSubjects();
-    }, [])
-  );
-
-  const loadSubjects = async () => {
-    try {
-      const response = await subjectService.getSubjects();
-      const subjectsData = response.data;
-      setSubjects(subjectsData);
-      
-      // Load tasks for each subject
-      const tasksMap = {};
-      for (const subject of subjectsData) {
-        const tasksRes = await taskService.getTasks({ subjectId: subject.id });
-        tasksMap[subject.id] = tasksRes.data;
-      }
-      setTasksBySubject(tasksMap);
-    } catch (error) {
-      console.error('Failed to load subjects:', error);
-      Alert.alert('Error', 'Failed to load subjects');
-    }
-  };
+  // Refresh subjects when screen comes into focus — no duplicate calls
+  useFocusRefresh(loadSubjects, [loadSubjects]);
 
   const handleCreateSubject = async () => {
-    if (!newSubject.name.trim()) {
+    if (!form.values.name.trim()) {
       Alert.alert('Error', 'Please enter a subject name');
       return;
     }
 
     try {
-      await subjectService.createSubject(newSubject);
+      await subjectService.createSubject(form.values);
       setModalVisible(false);
-      resetForm();
+      form.reset();
+      setIsEditMode(false);
+      setEditingSubject(null);
       loadSubjects();
       Alert.alert('Success', 'Subject created successfully');
     } catch (error) {
@@ -76,15 +49,17 @@ const SubjectsScreen = ({ navigation }) => {
   };
 
   const handleUpdateSubject = async () => {
-    if (!newSubject.name.trim()) {
+    if (!form.values.name.trim()) {
       Alert.alert('Error', 'Please enter a subject name');
       return;
     }
 
     try {
-      await subjectService.updateSubject(editingSubject.id, newSubject);
+      await subjectService.updateSubject(editingSubject.id, form.values);
       setModalVisible(false);
-      resetForm();
+      form.reset();
+      setIsEditMode(false);
+      setEditingSubject(null);
       loadSubjects();
       Alert.alert('Success', 'Subject updated successfully');
     } catch (error) {
@@ -117,36 +92,17 @@ const SubjectsScreen = ({ navigation }) => {
   const handleEditSubject = (subject) => {
     setEditingSubject(subject);
     setIsEditMode(true);
-    setNewSubject({
+    form.setAllValues({
       name: subject.name,
       color: subject.color,
     });
     setModalVisible(true);
   };
 
-  const resetForm = () => {
-    setNewSubject({
-      name: '',
-      color: '#3498db',
-    });
-    setIsEditMode(false);
-    setEditingSubject(null);
-  };
-
-  const getTaskCount = (subjectId) => {
-    const tasks = tasksBySubject[subjectId] || [];
-    const total = tasks.length;
-    const completed = tasks.filter(task => task.completed).length;
-    const pending = total - completed;
-    return { total, completed, pending };
-  };
-
   const renderSubjectItem = ({ item }) => {
-    const taskCounts = getTaskCount(item.id);
     return (
       <SubjectCard
         subject={item}
-        taskCounts={taskCounts}
         onPress={() => navigation.navigate('Tasks', { subjectId: item.id })}
         onEdit={() => handleEditSubject(item)}
         onDelete={() => handleDeleteSubject(item)}
@@ -179,7 +135,7 @@ const SubjectsScreen = ({ navigation }) => {
       />
 
       {/* Add Button */}
-      <FAB onPress={() => { resetForm(); setModalVisible(true); }} />
+      <FAB onPress={() => { form.reset(); setModalVisible(true); }} />
 
       {/* Subject Modal */}
       <Modal
@@ -188,7 +144,9 @@ const SubjectsScreen = ({ navigation }) => {
         visible={modalVisible}
         onRequestClose={() => {
           setModalVisible(false);
-          resetForm();
+          form.reset();
+          setIsEditMode(false);
+          setEditingSubject(null);
         }}
       >
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
@@ -204,8 +162,8 @@ const SubjectsScreen = ({ navigation }) => {
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 placeholder="e.g., Mathematics, Physics"
                 placeholderTextColor={theme.textTertiary}
-                value={newSubject.name}
-                onChangeText={(text) => setNewSubject({ ...newSubject, name: text })}
+                value={form.values.name}
+                onChangeText={(text) => form.handleChange('name', text)}
                 autoFocus
               />
             </View>
@@ -213,7 +171,7 @@ const SubjectsScreen = ({ navigation }) => {
             {/* Color Selection */}
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Color</Text>
-              <ColorPicker selectedColor={newSubject.color} onColorSelect={(color) => setNewSubject({ ...newSubject, color })} />
+              <ColorPicker selectedColor={form.values.color} onColorSelect={(color) => form.handleChange('color', color)} />
             </View>
 
             {/* Color Preview */}
@@ -222,10 +180,10 @@ const SubjectsScreen = ({ navigation }) => {
               <View
                 style={[
                   styles.colorPreview,
-                  { backgroundColor: newSubject.color },
+                  { backgroundColor: form.values.color },
                 ]}
               >
-                <Text style={styles.colorPreviewText}>{newSubject.name || 'Subject Name'}</Text>
+                <Text style={styles.colorPreviewText}>{form.values.name || 'Subject Name'}</Text>
               </View>
             </View>
 
@@ -235,7 +193,9 @@ const SubjectsScreen = ({ navigation }) => {
                 style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.border }]}
                 onPress={() => {
                   setModalVisible(false);
-                  resetForm();
+                  form.reset();
+                  setIsEditMode(false);
+                  setEditingSubject(null);
                 }}
               >
                 <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
