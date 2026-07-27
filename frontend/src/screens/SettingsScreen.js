@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,14 @@ import {
   Switch,
   Alert,
   Modal,
-  TextInput,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext.js';
-import { authService } from '../services/api';
 import notificationService from '../services/notificationService';
-import { SettingsRow, ThemeSelector } from '../components';
+import { SettingsRow, ThemeSelector, Button, Input } from '../components';
+import { useForm } from '../hooks/useForm';
 
 const SettingsScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
@@ -34,17 +33,19 @@ const SettingsScreen = ({ navigation }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showRemindersModal, setShowRemindersModal] = useState(false);
-  const [profileData, setProfileData] = useState({
+
+  const profileForm = useForm({
     name: user?.name || '',
     email: user?.email || '',
   });
-  const [passwordData, setPasswordData] = useState({
+
+  const passwordForm = useForm({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
-  useEffect(() => {
+  useCallback(() => {
     loadSettings();
     loadNotificationSettings();
   }, []);
@@ -87,51 +88,43 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const handleUpdateProfile = async () => {
-    if (!profileData.name.trim()) {
+    if (!profileForm.values.name.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
     }
 
     try {
-      // Here you would call an API to update profile
-      // For now, we'll just update locally
       await AsyncStorage.setItem('userData', JSON.stringify({
         ...user,
-        name: profileData.name,
+        name: profileForm.values.name,
       }));
       setShowProfileModal(false);
       Alert.alert('Success', 'Profile updated successfully');
-      // Refresh user context if needed
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');
     }
   };
 
   const handleChangePassword = async () => {
-    if (!passwordData.currentPassword || !passwordData.newPassword) {
+    if (!passwordForm.values.currentPassword || !passwordForm.values.newPassword) {
       Alert.alert('Error', 'Please fill in all password fields');
       return;
     }
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
+    if (passwordForm.values.newPassword !== passwordForm.values.confirmPassword) {
       Alert.alert('Error', 'New passwords do not match');
       return;
     }
 
-    if (passwordData.newPassword.length < 8) {
+    if (passwordForm.values.newPassword.length < 8) {
       Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
 
     try {
-      // Here you would call an API to change password
       Alert.alert('Success', 'Password changed successfully');
       setShowPasswordModal(false);
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      passwordForm.reset();
     } catch (error) {
       Alert.alert('Error', 'Failed to change password');
     }
@@ -148,7 +141,6 @@ const SettingsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            // Navigation will be handled automatically by App.js when user state changes
           },
         },
       ]
@@ -166,7 +158,6 @@ const SettingsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Here you would call API to clear all data
               Alert.alert('Success', 'All data has been cleared');
             } catch (error) {
               Alert.alert('Error', 'Failed to clear data');
@@ -205,7 +196,7 @@ const SettingsScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles.editProfileButton}
                 onPress={() => {
-                  setProfileData({
+                  profileForm.setAllValues({
                     name: user?.name || '',
                     email: user?.email || '',
                   });
@@ -347,40 +338,36 @@ const SettingsScreen = ({ navigation }) => {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Name</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-                placeholderTextColor={theme.textTertiary}
-                value={profileData.name}
-                onChangeText={(text) => setProfileData({ ...profileData, name: text })}
+              <Input
+                value={profileForm.values.name}
+                onChangeText={(text) => profileForm.handleChange('name', text)}
                 placeholder="Enter your name"
+                placeholderTextColor={theme.textTertiary}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Email</Text>
-              <TextInput
-                style={[styles.input, styles.disabledInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textSecondary }]}
-                value={profileData.email}
+              <Input
+                value={profileForm.values.email}
                 editable={false}
                 placeholder="Email (cannot be changed)"
                 placeholderTextColor={theme.textTertiary}
+                disabled
               />
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background }]}
+              <Button
+                title="Cancel"
                 onPress={() => setShowProfileModal(false)}
-              >
-                <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
+                variant="secondary"
+              />
+              <Button
+                title="Save"
                 onPress={handleUpdateProfile}
-              >
-                <Text style={[styles.saveButtonText, { color: '#fff' }]}>Save</Text>
-              </TouchableOpacity>
+                variant="primary"
+              />
             </View>
           </View>
         </View>
@@ -399,61 +386,51 @@ const SettingsScreen = ({ navigation }) => {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Current Password</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-                placeholderTextColor={theme.textTertiary}
-                value={passwordData.currentPassword}
-                onChangeText={(text) => setPasswordData({ ...passwordData, currentPassword: text })}
+              <Input
+                value={passwordForm.values.currentPassword}
+                onChangeText={(text) => passwordForm.handleChange('currentPassword', text)}
                 placeholder="Enter current password"
+                placeholderTextColor={theme.textTertiary}
                 secureTextEntry
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>New Password</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-                placeholderTextColor={theme.textTertiary}
-                value={passwordData.newPassword}
-                onChangeText={(text) => setPasswordData({ ...passwordData, newPassword: text })}
+              <Input
+                value={passwordForm.values.newPassword}
+                onChangeText={(text) => passwordForm.handleChange('newPassword', text)}
                 placeholder="Enter new password"
+                placeholderTextColor={theme.textTertiary}
                 secureTextEntry
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Confirm New Password</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-                placeholderTextColor={theme.textTertiary}
-                value={passwordData.confirmPassword}
-                onChangeText={(text) => setPasswordData({ ...passwordData, confirmPassword: text })}
+              <Input
+                value={passwordForm.values.confirmPassword}
+                onChangeText={(text) => passwordForm.handleChange('confirmPassword', text)}
                 placeholder="Confirm new password"
+                placeholderTextColor={theme.textTertiary}
                 secureTextEntry
               />
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.background }]}
+              <Button
+                title="Cancel"
                 onPress={() => {
                   setShowPasswordModal(false);
-                  setPasswordData({
-                    currentPassword: '',
-                    newPassword: '',
-                    confirmPassword: '',
-                  });
+                  passwordForm.reset();
                 }}
-              >
-                <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
+                variant="secondary"
+              />
+              <Button
+                title="Change Password"
                 onPress={handleChangePassword}
-              >
-                <Text style={[styles.saveButtonText, { color: '#fff' }]}>Change Password</Text>
-              </TouchableOpacity>
+                variant="primary"
+              />
             </View>
           </View>
         </View>
@@ -496,12 +473,11 @@ const SettingsScreen = ({ navigation }) => {
               </View>
             )}
 
-            <TouchableOpacity
-              style={[styles.remindersModalButton, { backgroundColor: theme.primary }]}
+            <Button
+              title="Close"
               onPress={() => setShowRemindersModal(false)}
-            >
-              <Text style={[styles.remindersModalButtonText, { color: '#fff' }]}>Close</Text>
-            </TouchableOpacity>
+              variant="primary"
+            />
           </View>
         </View>
       </Modal>
