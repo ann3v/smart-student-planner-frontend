@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -13,21 +11,31 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext';
+import { useForm } from '../hooks/useForm';
+import { Button, Input } from '../components';
+import { validateEmail, validatePassword } from '../utils/validation';
 
 const LoginScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuth();
+  
+  const form = useForm({
+    email: '',
+    password: '',
+  });
+
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+    const emailError = validateEmail(form.values.email);
+    const passwordError = validatePassword(form.values.password);
+    
+    if (emailError || passwordError) {
+      Alert.alert('Error', emailError || passwordError);
       return;
     }
 
-    const result = await login(email, password);
+    const result = await login(form.values.email, form.values.password);
     if (result.success) {
       // Navigation is handled by App.js based on token
     } else {
@@ -35,7 +43,7 @@ const LoginScreen = ({ navigation }) => {
         Alert.alert('Verify your email', result.error || 'Account not verified. Check your email for the code.', [
           {
             text: 'Enter Code',
-            onPress: () => navigation.replace('Verify', { email }),
+            onPress: () => navigation.replace('Verify', { email: form.values.email }),
           },
         ]);
         return;
@@ -55,54 +63,45 @@ const LoginScreen = ({ navigation }) => {
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Login to continue</Text>
 
           <View style={[styles.form, { backgroundColor: theme.cardBackground }]}>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+            <Input
+              value={form.values.email}
+              onChangeText={(text) => form.handleChange('email', text)}
               placeholder="Email"
               placeholderTextColor={theme.textTertiary}
-              value={email}
-              onChangeText={setEmail}
+              icon="email"
+              iconColor={theme.textSecondary}
               autoCapitalize="none"
               keyboardType="email-address"
               editable={!isLoading}
             />
             
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[styles.passwordInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
-                placeholder="Password"
-                placeholderTextColor={theme.textTertiary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                editable={!isLoading}
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <MaterialIcons
-                  name={showPassword ? 'visibility' : 'visibility-off'}
-                  size={24}
-                  color={theme.textTertiary}
-                />
-              </TouchableOpacity>
-            </View>
+            <Input
+              value={form.values.password}
+              onChangeText={(text) => form.handleChange('password', text)}
+              placeholder="Password"
+              placeholderTextColor={theme.textTertiary}
+              icon="lock"
+              iconColor={theme.textSecondary}
+              secureTextEntry={!showPassword}
+              editable={!isLoading}
+              rightIcon={showPassword ? 'visibility-off' : 'visibility'}
+              onRightIconPress={() => setShowPassword(!showPassword)}
+            />
 
-            <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
+            <Button
+              title={isLoading ? 'Logging in...' : 'Login'}
               onPress={handleLogin}
               disabled={isLoading}
-            >
-              <Text style={styles.buttonText}>
-                {isLoading ? 'Logging in...' : 'Login'}
-              </Text>
-            </TouchableOpacity>
+              variant="primary"
+            />
 
             <View style={styles.footer}>
               <Text style={[styles.footerText, { color: theme.textSecondary }]}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.linkText}>Sign up</Text>
-              </TouchableOpacity>
+              <Button
+                title="Sign up"
+                onPress={() => navigation.navigate('Register')}
+                variant="link"
+              />
             </View>
           </View>
         </View>
@@ -148,45 +147,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 15,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  passwordContainer: {
-    position: 'relative',
-    marginBottom: 15,
-  },
-  passwordInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 15,
-    paddingRight: 50,
-    fontSize: 16,
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
-  },
-  button: {
-    backgroundColor: '#4A90E2',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',

@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -14,53 +12,49 @@ import {
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext.js';
 import { useTheme } from '../context/ThemeContext';
+import { useForm } from '../hooks/useForm';
+import { Button, Input } from '../components';
+import { validateEmail, validatePassword } from '../utils/validation';
 
 const RegisterScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const [formData, setFormData] = useState({
+  const { register, isLoading } = useAuth();
+  
+  const form = useForm({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register, isLoading } = useAuth();
+
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const handleRegister = async () => {
-    // Validation
-    if (!formData.name.trim()) {
+    const emailError = validateEmail(form.values.email);
+    const passwordError = validatePassword(form.values.password);
+    
+    if (!form.values.name.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
     }
 
-    if (!formData.email.trim()) {
-      Alert.alert('Error', 'Please enter your email');
+    if (emailError) {
+      Alert.alert('Error', emailError);
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    if (passwordError) {
+      Alert.alert('Error', passwordError);
       return;
     }
 
-    if (!formData.password) {
-      Alert.alert('Error', 'Please enter a password');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
+    if (form.values.password !== form.values.confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
-    const result = await register(formData.email, formData.password, formData.name);
+    const result = await register(form.values.email, form.values.password, form.values.name);
 
     if (result.success && result.requiresVerification) {
       Alert.alert(
@@ -69,7 +63,7 @@ const RegisterScreen = ({ navigation }) => {
         [
           {
             text: 'Enter Code',
-            onPress: () => navigation.replace('Verify', { email: formData.email }),
+            onPress: () => navigation.replace('Verify', { email: form.values.email }),
           },
         ]
       );
@@ -96,12 +90,11 @@ const RegisterScreen = ({ navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Back Button */}
-          <TouchableOpacity
-            style={styles.backButton}
+          <Button
+            icon="arrow-back"
             onPress={() => navigation.goBack()}
-          >
-            <Icon name="arrow-back" size={24} color={theme.primary} />
-          </TouchableOpacity>
+            variant="ghost"
+          />
 
           <View style={styles.content}>
             <Text style={[styles.title, { color: theme.primary }]}>Create Account</Text>
@@ -109,122 +102,94 @@ const RegisterScreen = ({ navigation }) => {
 
             <View style={[styles.form, { backgroundColor: theme.cardBackground }]}>
               {/* Name Input */}
-              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-                <Icon name="person" size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { color: theme.text }]}
-                  placeholder="Full Name"
-                  placeholderTextColor={theme.textTertiary}
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  editable={!isLoading}
-                />
-              </View>
+              <Input
+                value={form.values.name}
+                onChangeText={(text) => form.handleChange('name', text)}
+                placeholder="Full Name"
+                placeholderTextColor={theme.textTertiary}
+                icon="person"
+                iconColor={theme.textSecondary}
+                editable={!isLoading}
+              />
 
               {/* Email Input */}
-              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-                <Icon name="email" size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { color: theme.text }]}
-                  placeholder="Email Address"
-                  placeholderTextColor={theme.textTertiary}
-                  value={formData.email}
-                  onChangeText={(text) => setFormData({ ...formData, email: text })}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!isLoading}
-                />
-              </View>
+              <Input
+                value={form.values.email}
+                onChangeText={(text) => form.handleChange('email', text)}
+                placeholder="Email Address"
+                placeholderTextColor={theme.textTertiary}
+                icon="email"
+                iconColor={theme.textSecondary}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!isLoading}
+              />
 
               {/* Password Input */}
-              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-                <Icon name="lock" size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, styles.passwordInput, { color: theme.text }]}
-                  placeholder="Password"
-                  placeholderTextColor={theme.textTertiary}
-                  value={formData.password}
-                  onChangeText={(text) => setFormData({ ...formData, password: text })}
-                  secureTextEntry={!showPassword}
-                  editable={!isLoading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Icon
-                    name={showPassword ? 'visibility' : 'visibility-off'}
-                    size={20}
-                    color={theme.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
+              <Input
+                value={form.values.password}
+                onChangeText={(text) => form.handleChange('password', text)}
+                placeholder="Password"
+                placeholderTextColor={theme.textTertiary}
+                icon="lock"
+                iconColor={theme.textSecondary}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+                rightIcon={showPassword ? 'visibility-off' : 'visibility'}
+                onRightIconPress={() => setShowPassword(!showPassword)}
+              />
 
               {/* Confirm Password Input */}
-              <View style={[styles.inputContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-                <Icon name="lock-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, styles.passwordInput, { color: theme.text }]}
-                  placeholder="Confirm Password"
-                  placeholderTextColor={theme.textTertiary}
-                  value={formData.confirmPassword}
-                  onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-                  secureTextEntry={!showConfirmPassword}
-                  editable={!isLoading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <Icon
-                    name={showConfirmPassword ? 'visibility' : 'visibility-off'}
-                    size={20}
-                    color="#666"
-                  />
-                </TouchableOpacity>
-              </View>
+              <Input
+                value={form.values.confirmPassword}
+                onChangeText={(text) => form.handleChange('confirmPassword', text)}
+                placeholder="Confirm Password"
+                placeholderTextColor={theme.textTertiary}
+                icon="lock-outline"
+                iconColor={theme.textSecondary}
+                secureTextEntry={!showConfirmPassword}
+                editable={isLoading}
+                rightIcon={showConfirmPassword ? 'visibility-off' : 'visibility'}
+                onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              />
 
               {/* Password Requirements */}
               <View style={styles.requirementsContainer}>
                 <Text style={styles.requirementsTitle}>Password must contain:</Text>
                 <View style={styles.requirementItem}>
                   <Icon
-                    name={formData.password.length >= 8 ? 'check-circle' : 'radio-button-unchecked'}
+                    name={form.values.password.length >= 8 ? 'check-circle' : 'radio-button-unchecked'}
                     size={16}
-                    color={formData.password.length >= 8 ? '#27ae60' : '#999'}
+                    color={form.values.password.length >= 8 ? '#27ae60' : '#999'}
                   />
                   <Text style={[
                     styles.requirementText,
-                    formData.password.length >= 8 && styles.requirementMet
+                    form.values.password.length >= 8 && styles.requirementMet
                   ]}>
                     At least 8 characters
                   </Text>
                 </View>
                 <View style={styles.requirementItem}>
                   <Icon
-                    name={formData.password === formData.confirmPassword && formData.password.length > 0 ? 'check-circle' : 'radio-button-unchecked'}
+                    name={form.values.password === form.values.confirmPassword && form.values.password.length > 0 ? 'check-circle' : 'radio-button-unchecked'}
                     size={16}
-                    color={formData.password === formData.confirmPassword && formData.password.length > 0 ? '#27ae60' : '#999'}
+                    color={form.values.password === form.values.confirmPassword && form.values.password.length > 0 ? '#27ae60' : '#999'}
                   />
                   <Text style={[
                     styles.requirementText,
-                    formData.password === formData.confirmPassword && formData.password.length > 0 && styles.requirementMet
+                    form.values.password === form.values.confirmPassword && form.values.password.length > 0 && styles.requirementMet
                   ]}>
                     Passwords match
                   </Text>
                 </View>
               </View>
 
-              {/* Register Button */}
-              <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonDisabled]}
+              <Button
+                title={isLoading ? 'Creating Account...' : 'Create Account'}
                 onPress={handleRegister}
                 disabled={isLoading}
-              >
-                <Text style={styles.buttonText}>
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
-                </Text>
-              </TouchableOpacity>
+                variant="primary"
+              />
 
               {/* Terms and Conditions */}
               <Text style={styles.termsText}>
@@ -236,9 +201,11 @@ const RegisterScreen = ({ navigation }) => {
               {/* Login Link */}
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Already have an account? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                  <Text style={styles.linkText}>Sign in</Text>
-                </TouchableOpacity>
+                <Button
+                  title="Sign in"
+                  onPress={() => navigation.navigate('Login')}
+                  variant="link"
+                />
               </View>
             </View>
           </View>
@@ -293,31 +260,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    marginBottom: 15,
-    backgroundColor: '#f8f9fa',
-  },
-  inputIcon: {
-    paddingHorizontal: 15,
-  },
-  input: {
-    flex: 1,
-    padding: 15,
-    fontSize: 16,
-  },
-  passwordInput: {
-    paddingRight: 40,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    padding: 10,
-  },
   requirementsContainer: {
     backgroundColor: '#f8f9fa',
     padding: 15,
@@ -343,31 +285,12 @@ const styles = StyleSheet.create({
   requirementMet: {
     color: '#27ae60',
   },
-  button: {
-    backgroundColor: '#4A90E2',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   termsText: {
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 20,
-  },
-  linkText: {
-    color: '#4A90E2',
-    fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
@@ -376,6 +299,10 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: '#666',
+  },
+  linkText: {
+    color: '#4A90E2',
+    fontWeight: '500',
   },
 });
 

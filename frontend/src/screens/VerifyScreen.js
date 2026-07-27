@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -12,21 +10,34 @@ import {
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/authContext';
+import { useForm } from '../hooks/useForm';
+import { Button, Input } from '../components';
+import { validateEmail } from '../utils/validation';
 
 const VerifyScreen = ({ route, navigation }) => {
   const { theme } = useTheme();
   const { verifyCode, isLoading } = useAuth();
   const prefilledEmail = route.params?.email || '';
-  const [email, setEmail] = useState(prefilledEmail);
-  const [code, setCode] = useState('');
+  
+  const form = useForm({
+    email: prefilledEmail,
+    code: '',
+  });
 
   const handleVerify = async () => {
-    if (!email || !code) {
-      Alert.alert('Error', 'Please enter both email and code');
+    const emailError = validateEmail(form.values.email);
+    
+    if (emailError) {
+      Alert.alert('Error', emailError);
       return;
     }
 
-    const result = await verifyCode(email, code.trim());
+    if (!form.values.code.trim()) {
+      Alert.alert('Error', 'Please enter the verification code');
+      return;
+    }
+
+    const result = await verifyCode(form.values.email, form.values.code.trim());
     if (result.success) {
       Alert.alert('Verified', 'Your account has been verified.', [
         { text: 'Continue', onPress: () => navigation.replace('MainTabs') },
@@ -49,41 +60,43 @@ const VerifyScreen = ({ route, navigation }) => {
           </Text>
 
           <View style={[styles.form, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            <Input
+              value={form.values.email}
+              onChangeText={(text) => form.handleChange('email', text)}
               placeholder="Email"
               placeholderTextColor={theme.textTertiary}
-              value={email}
-              onChangeText={setEmail}
+              icon="email"
+              iconColor={theme.textSecondary}
               autoCapitalize="none"
               keyboardType="email-address"
               editable={!isLoading}
             />
 
-            <Text style={[styles.label, { color: theme.textSecondary, marginTop: 12 }]}>Verification Code</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, letterSpacing: 4, textAlign: 'center' }]}
+            <Input
+              value={form.values.code}
+              onChangeText={(text) => form.handleChange('code', text)}
               placeholder="123456"
               placeholderTextColor={theme.textTertiary}
-              value={code}
-              onChangeText={setCode}
+              icon="verified-user"
+              iconColor={theme.textSecondary}
               keyboardType="numeric"
               maxLength={6}
               editable={!isLoading}
+              style={styles.codeInput}
             />
 
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonDisabled]}
+            <Button
+              title={isLoading ? 'Verifying...' : 'Verify'}
               onPress={handleVerify}
               disabled={isLoading}
-            >
-              <Text style={styles.buttonText}>{isLoading ? 'Verifying...' : 'Verify'}</Text>
-            </TouchableOpacity>
+              variant="primary"
+            />
 
-            <TouchableOpacity onPress={() => navigation.replace('Login')}>
-              <Text style={[styles.linkText, { color: theme.primary }]}>Back to Login</Text>
-            </TouchableOpacity>
+            <Button
+              title="Back to Login"
+              onPress={() => navigation.replace('Login')}
+              variant="link"
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -102,30 +115,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  label: {
-    fontSize: 14,
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  button: {
-    marginTop: 20,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  codeInput: {
+    textAlign: 'center',
+    letterSpacing: 4,
   },
   linkText: {
     textAlign: 'center',
