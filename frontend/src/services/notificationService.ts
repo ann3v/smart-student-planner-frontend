@@ -8,10 +8,15 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 class NotificationService {
+  scheduledNotifications: Array<Record<string, unknown>>;
+  notificationPermission: boolean | null;
+
   constructor() {
     this.scheduledNotifications = [];
     this.notificationPermission = null;
@@ -83,7 +88,7 @@ class NotificationService {
         },
         trigger: {
           date: notificationTime.toDate(),
-        },
+        } as any,
       });
 
       // Store notification details locally
@@ -142,7 +147,7 @@ class NotificationService {
         },
         trigger: {
           date: notificationTime.toDate(),
-        },
+        } as any,
       });
 
       // Store notification details locally
@@ -196,8 +201,9 @@ class NotificationService {
           badge: 1,
         },
         trigger: {
+          type: 'date' as any,
           date: new Date(triggerTime),
-        },
+        } as any,
       });
 
       await this.storeNotification({

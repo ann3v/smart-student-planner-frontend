@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { getPriorityColor } from '../utils/constants';
+import type { TaskPriority } from '../types';
 
-const PriorityBadge = ({ priority, style }) => {
+interface PriorityBadgeProps {
+  priority: TaskPriority;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const PriorityBadge = ({ priority, style }: PriorityBadgeProps) => {
   const backgroundColor = getPriorityColor(priority);
   return (
     <View style={[styles.badge, { backgroundColor }, style]}>

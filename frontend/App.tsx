@@ -1,28 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, Text } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { AuthProvider, useAuth } from './src/context/authContext.js';
-import { ThemeProvider } from './src/context/ThemeContext.js';
+import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
+import { createStackNavigator, type StackNavigationProp } from '@react-navigation/stack';
+import { AuthProvider, useAuth } from './src/context/authContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import notificationService from './src/services/notificationService.js';
+import notificationService from './src/services/notificationService';
+import type { RootStackParamList } from './src/types';
 
 // Import screens
-import LoginScreen from './src/screens/LoginScreen.js';
-import RegisterScreen from './src/screens/RegisterScreen.js';
-import VerifyScreen from './src/screens/VerifyScreen.js';
-import TaskDetailScreen from './src/screens/TaskDetailScreen.js';
-import SettingsScreen from './src/screens/SettingsScreen.js';
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import VerifyScreen from './src/screens/VerifyScreen';
+import TaskDetailScreen from './src/screens/TaskDetailScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 // Import MainTabNavigator
-import MainTabNavigator from './src/navigation/MainTabNavigator.js';
+import MainTabNavigator from './src/navigation/MainTabNavigator';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
-function RootNavigator({ userToken, setUserToken }) {
+type RootNavigatorProps = {
+  userToken: string | null;
+  setUserToken: React.Dispatch<React.SetStateAction<string | null>>;
+};
+
+function RootNavigator({ userToken }: RootNavigatorProps) {
   return (
     <Stack.Navigator
+      id="RootStack"
       screenOptions={{
         headerStyle: {
           backgroundColor: '#4A90E2',
@@ -105,11 +112,11 @@ function RootNavigator({ userToken, setUserToken }) {
 
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
-  const [userToken, setUserToken] = useState(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
   const { user, loadUser } = useAuth();
-  const navigationRef = useRef(null);
-  const notificationListener = useRef();
-  const responseListener = useRef();
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList> | null>(null);
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     // Request notification permissions and setup listeners
@@ -119,21 +126,22 @@ function AppContent() {
         await notificationService.requestPermissions();
 
         // Set up notification event listeners
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+        notificationListener.current = Notifications.addNotificationReceivedListener(() => {
           // Handle notification received while app is in foreground
         });
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          const data = response.notification.request.content.data;
+          const data = response.notification.request.content.data as
+            | { type?: string; taskId?: number; scheduleId?: number }
+            | undefined;
 
-          // Navigate to relevant screen based on notification type
-          if (data.type === 'task-reminder' && data.taskId) {
+          if (data?.type === 'task-reminder' && data.taskId) {
             navigationRef.current?.navigate('TaskDetail', { taskId: data.taskId });
-          } else if (data.type === 'schedule-reminder' && data.scheduleId) {
+          } else if (data?.type === 'schedule-reminder' && data.scheduleId) {
             navigationRef.current?.navigate('MainTabs', {
               screen: 'Schedule',
-              params: { scheduleId: data.scheduleId }
-            });
+              params: { scheduleId: data.scheduleId },
+            } as never);
           }
         });
       } catch (error) {
@@ -145,11 +153,11 @@ function AppContent() {
 
     // Cleanup listeners
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+      if (notificationListener.current && 'removeNotificationSubscription' in Notifications) {
+        (Notifications as typeof Notifications & { removeNotificationSubscription?: (subscription: Notifications.Subscription) => void }).removeNotificationSubscription?.(notificationListener.current);
       }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+      if (responseListener.current && 'removeNotificationSubscription' in Notifications) {
+        (Notifications as typeof Notifications & { removeNotificationSubscription?: (subscription: Notifications.Subscription) => void }).removeNotificationSubscription?.(responseListener.current);
       }
     };
   }, []);

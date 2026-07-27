@@ -1,9 +1,19 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-const StatCard = ({ icon, iconColor, value, label, valueColor, onPress, style }) => {
+interface StatCardProps {
+  icon?: any;
+  iconColor?: string;
+  value: number | string;
+  label: string;
+  valueColor?: string;
+  onPress?: () => void;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const StatCard = ({ icon, iconColor, value, label, valueColor, onPress, style }: StatCardProps) => {
   const { theme } = useTheme();
 
   const Wrapper = onPress ? TouchableOpacity : View;

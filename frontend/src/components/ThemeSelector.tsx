@@ -1,12 +1,17 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import type { ThemeMode } from '../types';
 
-const ThemeSelector = ({ style }) => {
+interface ThemeSelectorProps {
+  style?: ViewStyle | ViewStyle[];
+}
+
+const ThemeSelector = ({ style }: ThemeSelectorProps) => {
   const { theme, themeMode, setTheme } = useTheme();
 
-  const options = [
+  const options: Array<{ mode: ThemeMode; icon: any; label: string }> = [
     { mode: 'light', icon: 'wb-sunny', label: 'Light' },
     { mode: 'dark', icon: 'nightlight-round', label: 'Dark' },
     { mode: 'system', icon: 'phone-android', label: 'System' },

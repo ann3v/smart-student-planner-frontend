@@ -35,8 +35,8 @@ const ScheduleBlock = ({ timeSlot, onPress, onLongPress, backgroundColor }) => {
       style={[
         styles.timeSlotItem,
         {
-          top: top + '%',
-          height: Math.max(height, 8) + '%',
+          top: `${top}%` as any,
+          height: `${Math.max(height, 8)}%` as any,
           backgroundColor: backgroundColor,
         },
       ]}

@@ -1,9 +1,15 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SUBJECT_COLOR_PALETTE } from '../utils/constants';
 
-const ColorPicker = ({ selectedColor, onColorSelect, style }) => {
+interface ColorPickerProps {
+  selectedColor: string;
+  onColorSelect: (color: string) => void;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const ColorPicker = ({ selectedColor, onColorSelect, style }: ColorPickerProps) => {
   return (
     <View style={[styles.colorGrid, style]}>
       {SUBJECT_COLOR_PALETTE.map((color) => (

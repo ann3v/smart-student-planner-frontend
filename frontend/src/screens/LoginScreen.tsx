@@ -9,13 +9,20 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useAuth } from '../context/authContext.js';
+import { useAuth } from '../context/authContext';
 import { useTheme } from '../context/ThemeContext';
 import { useForm } from '../hooks/useForm';
 import { Button, Input } from '../components';
 import { validateEmail, validatePassword } from '../utils/validation';
 
-const LoginScreen = ({ navigation }) => {
+interface LoginScreenProps {
+  navigation: {
+    navigate: (screen: string) => void;
+    replace: (screen: string, params?: { email?: string }) => void;
+  };
+}
+
+const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const { theme } = useTheme();
   const { login, isLoading } = useAuth();
   

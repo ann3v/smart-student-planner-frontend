@@ -1,8 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-const FilterChips = ({ options = [], activeOption, onSelect, style }) => {
+interface FilterOption {
+  label: string;
+  value: string;
+}
+
+interface FilterChipsProps {
+  options?: Array<string | FilterOption>;
+  activeOption: string;
+  onSelect: (value: string) => void;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const FilterChips = ({ options = [], activeOption, onSelect, style }: FilterChipsProps) => {
   const { theme } = useTheme();
 
   return (

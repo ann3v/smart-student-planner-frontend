@@ -3,7 +3,7 @@ import type { ProductivityAnalytics, TaskByPriority } from '../types';
 
 export const prepareProductivityData = (
   analytics: ProductivityAnalytics | null,
-  themeTextSecondary: string
+  _themeTextSecondary?: string
 ) => {
   if (!analytics?.tasksPerDay || analytics.tasksPerDay.length === 0) {
     return null;
@@ -36,7 +36,8 @@ export const prepareProductivityData = (
 
 export const prepareSubjectDistributionData = (
   analytics: ProductivityAnalytics | null,
-  themeTextSecondary: string
+  themeTextSecondary?: string,
+  _getChartColorByIndex?: (index: number) => string
 ) => {
   if (!analytics?.tasksBySubject || analytics.tasksBySubject.length === 0) {
     return null;
@@ -46,8 +47,8 @@ export const prepareSubjectDistributionData = (
     .map((item, index) => ({
       name: item.subjectName,
       count: isFinite(item.count) ? Math.max(item.count, 0) : 0,
-      color: item.subjectColor || getChartColorByIndex(index),
-      legendFontColor: themeTextSecondary,
+      color: item.subjectColor || (_getChartColorByIndex ? _getChartColorByIndex(index) : '#4A90E2'),
+      legendFontColor: themeTextSecondary || '#666',
       legendFontSize: 12,
     }))
     .filter(item => item.count > 0);

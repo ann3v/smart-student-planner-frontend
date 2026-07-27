@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,8 +25,15 @@ import { useSubjects } from '../hooks/useSubjects';
 import { useNotifications } from '../hooks/useNotifications';
 import { FAB, FilterChips, TaskCard, EmptyState } from '../components';
 import { TASK_FILTERS } from '../utils/constants';
+import type { Task, TaskCreateInput, TaskPriority } from '../types';
 
-const TasksScreen = ({ navigation }) => {
+interface TasksScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: { taskId?: number }) => void;
+  };
+}
+
+const TasksScreen = ({ navigation }: TasksScreenProps) => {
   const { theme } = useTheme();
   const { tasks, loadTasks } = useTasks();
   const { subjects, loadSubjects } = useSubjects();
@@ -34,7 +41,7 @@ const TasksScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all'); // all, pending, completed
   const [modalVisible, setModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<TaskCreateInput & { dueDate: string | null }>({
     title: '',
     description: '',
     subjectId: null,
@@ -56,7 +63,7 @@ const TasksScreen = ({ navigation }) => {
   useFocusRefresh(loadFilteredTasks, [loadFilteredTasks]);
 
   // Build reminder map from notifications hook
-  const taskReminders = {};
+  const taskReminders: Record<number, unknown[]> = {};
   reminders.forEach(reminder => {
     if (reminder.taskId) {
       if (!taskReminders[reminder.taskId]) {
@@ -66,7 +73,7 @@ const TasksScreen = ({ navigation }) => {
     }
   });
 
-  const handleToggleCompletion = async (taskId) => {
+  const handleToggleCompletion = async (taskId: number) => {
     try {
       await taskService.toggleTaskCompletion(taskId);
       loadFilteredTasks();
@@ -75,7 +82,7 @@ const TasksScreen = ({ navigation }) => {
     }
   };
 
-  const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (event: { type?: string } | undefined, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
@@ -96,7 +103,7 @@ const TasksScreen = ({ navigation }) => {
     }
 
     try {
-      const response = await taskService.createTask(newTask);
+      await taskService.createTask(newTask);
 
       setModalVisible(false);
       setNewTask({
@@ -113,7 +120,7 @@ const TasksScreen = ({ navigation }) => {
     }
   };
 
-  const renderTaskItem = ({ item }) => (
+  const renderTaskItem = ({ item }: { item: Task }) => (
     <TaskCard
       task={item}
       onPress={() => navigation.navigate('TaskDetail', { taskId: item.id })}
@@ -261,7 +268,7 @@ const TasksScreen = ({ navigation }) => {
                 <View style={styles.priorityContainer}>
                   <Text style={[styles.label, { color: theme.text }]}>Priority</Text>
                   <View style={styles.priorityOptions}>
-                    {['low', 'medium', 'high'].map((p) => (
+                    {(['low', 'medium', 'high'] as TaskPriority[]).map((p) => (
                       <TouchableOpacity
                         key={p}
                         style={[

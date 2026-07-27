@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export function useForm<T extends Record<string, unknown>>(
+export function useForm<T extends object>(
   initialValues: T
 ) {
   const [values, setValues] = useState<T>(initialValues);

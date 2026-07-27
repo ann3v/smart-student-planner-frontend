@@ -1,25 +1,26 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { type ReactElement } from 'react';
+import { createBottomTabNavigator, type BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import type { MainTabParamList } from '../types';
 
-// Import screens
-import DashboardScreen from '../screens/DashboardScreen.js';
-import TasksScreen from '../screens/TaskScreen.js';
-import ScheduleScreen from '../screens/ScheduleScreen.js';
-import SubjectsScreen from '../screens/SubjectsScreen.js';
-import AnalyticsScreen from '../screens/AnalyticsScreen.js';
+import DashboardScreen from '../screens/DashboardScreen';
+import TasksScreen from '../screens/TaskScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
+import SubjectsScreen from '../screens/SubjectsScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const MainTabNavigator = () => {
+const MainTabNavigator = (): ReactElement => {
   const { theme } = useTheme();
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+      id="MainTabs"
+      screenOptions={({ route }): BottomTabNavigationOptions => ({
+        tabBarIcon: ({ color, size }) => {
+          let iconName: 'dashboard' | 'assignment' | 'calendar-today' | 'menu-book' | 'analytics';
 
           switch (route.name) {
             case 'Dashboard':
@@ -39,7 +40,7 @@ const MainTabNavigator = () => {
               break;
           }
 
-          return <MaterialIcons name={iconName} size={size} color={color} />; 
+          return <MaterialIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textTertiary,

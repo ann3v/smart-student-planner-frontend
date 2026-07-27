@@ -1,9 +1,18 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-const EmptyState = ({ icon, title, subtitle, actionLabel, onAction, style }) => {
+interface EmptyStateProps {
+  icon?: any;
+  title?: string;
+  subtitle?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const EmptyState = ({ icon, title, subtitle, actionLabel, onAction, style }: EmptyStateProps) => {
   const { theme } = useTheme();
 
   return (

@@ -1,8 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-const SectionHeader = ({ title, actionLabel, onAction, style }) => {
+interface SectionHeaderProps {
+  title: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const SectionHeader = ({ title, actionLabel, onAction, style }: SectionHeaderProps) => {
   const { theme } = useTheme();
 
   return (

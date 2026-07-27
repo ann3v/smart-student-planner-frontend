@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,21 @@ import {
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../context/authContext.js';
-import { useTheme } from '../context/ThemeContext.js';
+import { useAuth } from '../context/authContext';
+import { useTheme } from '../context/ThemeContext';
 import notificationService from '../services/notificationService';
 import { SettingsRow, ThemeSelector, Button, Input } from '../components';
+import type { ViewStyle, TextStyle } from 'react-native';
 import { useForm } from '../hooks/useForm';
 
-const SettingsScreen = ({ navigation }) => {
+interface SettingsScreenProps {
+  navigation: {
+    navigate: (screen: string) => void;
+    goBack: () => void;
+  };
+}
+
+const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
   const { user, logout } = useAuth();
   const { theme, isDark, themeMode, setTheme } = useTheme();
   const [settings, setSettings] = useState({
@@ -28,7 +36,7 @@ const SettingsScreen = ({ navigation }) => {
     taskReminders: true,
     studyReminders: true,
   });
-  const [notificationSettings, setNotificationSettings] = useState(null);
+  const [notificationSettings, setNotificationSettings] = useState<Record<string, unknown> | null>(null);
   const [remindersCount, setRemindersCount] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -45,7 +53,7 @@ const SettingsScreen = ({ navigation }) => {
     confirmPassword: '',
   });
 
-  useCallback(() => {
+  useEffect(() => {
     loadSettings();
     loadNotificationSettings();
   }, []);
@@ -73,7 +81,7 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  const saveSettings = async (newSettings) => {
+  const saveSettings = async (newSettings: typeof settings) => {
     try {
       await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
       setSettings(newSettings);
@@ -82,7 +90,7 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  const handleToggleSetting = (setting) => {
+  const handleToggleSetting = (setting: keyof typeof settings) => {
     const newSettings = { ...settings, [setting]: !settings[setting] };
     saveSettings(newSettings);
   };
@@ -168,11 +176,11 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
-  const renderSettingItem = (icon, label, value, onToggle) => (
+  const renderSettingItem = (icon: string, label: string, value: boolean, onToggle: () => void) => (
     <SettingsRow icon={icon} label={label} value={value} onToggle={onToggle} />
   );
 
-  const renderActionItem = (icon, label, onPress, color, showArrow = true) => (
+  const renderActionItem = (icon: string, label: string, onPress: () => void, color?: string, showArrow = true) => (
     <SettingsRow icon={icon} label={label} onPress={onPress} color={color} showArrow={showArrow} />
   );
 

@@ -127,7 +127,7 @@ const AnalyticsScreen = () => {
   };
 
   const renderSubjectDistribution = () => {
-    const data = prepareSubjectDistributionData(analytics, theme, getChartColorByIndex);
+    const data = prepareSubjectDistributionData(analytics, theme.textSecondary, getChartColorByIndex);
 
     if (!data || data.length === 0) {
       return (
@@ -170,6 +170,8 @@ const AnalyticsScreen = () => {
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Weekly Study Hours</Text>
         <BarChart
           data={data}
+          yAxisLabel=""
+          yAxisSuffix=""
           width={screenWidth - 40}
           height={220}
           chartConfig={{

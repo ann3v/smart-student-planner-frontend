@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { DEFAULT_SUBJECT_COLOR } from '../utils/constants';
 
-const SubjectBadge = ({ name, color, style }) => {
+interface SubjectBadgeProps {
+  name: string;
+  color?: string;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const SubjectBadge = ({ name, color, style }: SubjectBadgeProps) => {
   return (
     <View style={[styles.badge, { backgroundColor: color || DEFAULT_SUBJECT_COLOR }, style]}>
       <Text style={styles.text}>{name}</Text>

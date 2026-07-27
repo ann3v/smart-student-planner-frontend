@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import type { Task, Subject, TaskPriority, NotificationReminder } from '../types';
 import {
   View,
   Text,
@@ -22,17 +23,28 @@ import { useTheme } from '../context/ThemeContext';
 import { PriorityBadge, SubjectBadge, ConfirmDialog } from '../components';
 import { getPriorityColor } from '../utils/constants';
 
-const TaskDetailScreen = ({ route, navigation }) => {
+interface TaskDetailScreenProps {
+  route: {
+    params: {
+      taskId: number;
+    };
+  };
+  navigation: {
+    goBack: () => void;
+  };
+}
+
+const TaskDetailScreen = ({ route, navigation }: TaskDetailScreenProps) => {
   const { theme } = useTheme();
   const { taskId } = route.params;
-  const [task, setTask] = useState(null);
-  const [subjects, setSubjects] = useState([]);
+  const [task, setTask] = useState<Task | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState({});
+  const [editedTask, setEditedTask] = useState<Partial<Task>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
-  const [taskReminders, setTaskReminders] = useState([]);
+  const [taskReminders, setTaskReminders] = useState<NotificationReminder[]>([]);
   const [reminderMinutes, setReminderMinutes] = useState('30');
 
   const REMINDER_OPTIONS = [
@@ -168,17 +180,17 @@ const TaskDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const getSubjectColor = (subjectId) => {
+  const getSubjectColor = (subjectId?: number | null) => {
     const subject = subjects.find(s => s.id === subjectId);
     return subject ? subject.color : '#3498db';
   };
 
-  const getSubjectName = (subjectId) => {
+  const getSubjectName = (subjectId?: number | null) => {
     const subject = subjects.find(s => s.id === subjectId);
     return subject ? subject.name : 'No subject';
   };
 
-  const formatDateLocal = (dateString) => {
+  const formatDateLocal = (dateString?: string | null) => {
     if (!dateString) return 'No due date';
     const date = parseDate(dateString);
     if (!date) return 'Invalid date';
@@ -190,7 +202,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
     });
   };
 
-  const formatTime = (dateString) => {
+  const formatTime = (dateString?: string | null) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
@@ -199,7 +211,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
     });
   };
 
-  const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (_event: unknown, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       const currentDate = editedTask.dueDate ? new Date(editedTask.dueDate) : new Date();
@@ -210,7 +222,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleTimeChange = (event, selectedTime) => {
+  const handleTimeChange = (_event: unknown, selectedTime?: Date) => {
     setShowTimePicker(false);
     if (selectedTime) {
       const currentDate = editedTask.dueDate ? new Date(editedTask.dueDate) : new Date();
@@ -336,7 +348,7 @@ const TaskDetailScreen = ({ route, navigation }) => {
             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Priority</Text>
             {isEditing ? (
               <View style={styles.prioritySelector}>
-                {['low', 'medium', 'high'].map(priority => (
+                {(['low', 'medium', 'high'] as TaskPriority[]).map(priority => (
                   <TouchableOpacity
                     key={priority}
                     style={[

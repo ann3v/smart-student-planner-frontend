@@ -1,10 +1,10 @@
-export const validateEmail = (email: string): boolean => {
+export const validateEmail = (email: string): string | null => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return emailRegex.test(email) ? null : 'Please enter a valid email address';
 };
 
-export const validatePassword = (password: string): boolean => {
-  return password.length >= 8;
+export const validatePassword = (password: string): string | null => {
+  return password.length >= 8 ? null : 'Password must be at least 8 characters';
 };
 
 export const validateRequired = (value: string): boolean => {

@@ -10,13 +10,21 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
-import { useAuth } from '../context/authContext.js';
+import { useAuth } from '../context/authContext';
 import { useTheme } from '../context/ThemeContext';
 import { useForm } from '../hooks/useForm';
 import { Button, Input } from '../components';
 import { validateEmail, validatePassword } from '../utils/validation';
 
-const RegisterScreen = ({ navigation }) => {
+interface RegisterScreenProps {
+  navigation: {
+    navigate: (screen: string) => void;
+    replace: (screen: string, params?: { email?: string }) => void;
+    goBack: () => void;
+  };
+}
+
+const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   const { theme } = useTheme();
   const { register, isLoading } = useAuth();
   

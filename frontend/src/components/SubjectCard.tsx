@@ -1,7 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import type { Subject } from '../types';
+
+interface SubjectCardProps {
+  subject: Subject;
+  taskCounts?: {
+    total?: number;
+    completed?: number;
+    pending?: number;
+  };
+  onPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  style?: ViewStyle | ViewStyle[];
+}
 
 /**
  * Card component for displaying a subject with task counts and edit/delete actions.
@@ -13,7 +27,7 @@ import { useTheme } from '../context/ThemeContext';
  * @param {() => void} props.onEdit - Called when the edit button is pressed
  * @param {() => void} props.onDelete - Called when the delete button is pressed
  */
-const SubjectCard = ({ subject, taskCounts, onPress, onEdit, onDelete }) => {
+const SubjectCard = ({ subject, taskCounts, onPress, onEdit, onDelete, style }: SubjectCardProps) => {
   const { theme } = useTheme();
 
   return (
@@ -24,6 +38,7 @@ const SubjectCard = ({ subject, taskCounts, onPress, onEdit, onDelete }) => {
           backgroundColor: theme.cardBackground,
           borderColor: theme.border,
         },
+        style,
       ]}
       onPress={onPress}
       activeOpacity={0.7}

@@ -1,6 +1,19 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, type ViewStyle, type TextStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+
+interface ButtonProps {
+  title?: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'link' | 'ghost';
+  disabled?: boolean;
+  loading?: boolean;
+  style?: ViewStyle | ViewStyle[];
+  textStyle?: TextStyle | TextStyle[];
+  fullWidth?: boolean;
+  icon?: string;
+  iconColor?: string;
+}
 
 const Button = ({
   title,
@@ -11,7 +24,7 @@ const Button = ({
   style,
   textStyle,
   fullWidth = false,
-}) => {
+}: ButtonProps) => {
   const { theme } = useTheme();
 
   const getBackgroundColor = () => {

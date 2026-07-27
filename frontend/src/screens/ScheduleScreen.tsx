@@ -24,20 +24,27 @@ import { useForm } from '../hooks/useForm';
 import { FAB, DaySelector, ScheduleBlock, EmptyState, TimePickerModal } from '../components';
 import { getActivityColor, DAYS_OF_WEEK } from '../utils/constants';
 import { checkScheduleConflict, formatTime, timeStringToDate, dateToTimeString } from '../utils/scheduleUtils';
+import type { ActivityType, ScheduleItem, Subject, Task, ScheduleCreateInput } from '../types';
 
-const ScheduleScreen = ({ navigation }) => {
+interface ScheduleScreenProps {
+  navigation: {
+    navigate: (screen: string) => void;
+  };
+}
+
+const ScheduleScreen = ({ navigation }: ScheduleScreenProps) => {
   const { theme } = useTheme();
   const { weeklySchedule, loadWeeklySchedule } = useSchedule();
-  const [subjects, setSubjects] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+  const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [activeTimeField, setActiveTimeField] = useState('startTime');
   const [tempTime, setTempTime] = useState(new Date());
-  const form = useForm({
+  const form = useForm<ScheduleCreateInput & { dayOfWeek: number; title: string; activityType: ActivityType; startTime: string; endTime: string; subjectId: number | null; taskId: number | null; isRecurring: boolean; reminderEnabled: boolean; reminderMinutesBefore: number }>({
     dayOfWeek: new Date().getDay(),
     title: '',
     activityType: 'study',
@@ -75,7 +82,8 @@ const ScheduleScreen = ({ navigation }) => {
     const conflict = checkScheduleConflict(
       form.values.dayOfWeek,
       form.values.startTime,
-      form.values.endTime
+      form.values.endTime,
+      getDaySchedule(form.values.dayOfWeek)
     );
 
     if (conflict.hasConflict) {
@@ -101,6 +109,7 @@ const ScheduleScreen = ({ navigation }) => {
       form.values.dayOfWeek,
       form.values.startTime,
       form.values.endTime,
+      getDaySchedule(form.values.dayOfWeek),
       editingItem.id
     );
 
@@ -122,7 +131,7 @@ const ScheduleScreen = ({ navigation }) => {
     }
   };
 
-  const handleDeleteSchedule = async (id) => {
+  const handleDeleteSchedule = async (id: number) => {
     Alert.alert(
       'Delete Schedule Item',
       'Are you sure you want to delete this item?',
@@ -144,7 +153,7 @@ const ScheduleScreen = ({ navigation }) => {
     );
   };
 
-  const handleEditSchedule = (item) => {
+  const handleEditSchedule = (item: ScheduleItem) => {
     setEditingItem(item);
     setIsEditMode(true);
     form.setAllValues({
@@ -162,18 +171,18 @@ const ScheduleScreen = ({ navigation }) => {
     setModalVisible(true);
   };
 
-  const getSubjectColor = (subjectId) => {
+  const getSubjectColor = (subjectId?: number | null) => {
     const subject = subjects.find(s => s.id === subjectId);
     return subject ? subject.color : '#3498db';
   };
 
-  const openTimePicker = (field) => {
+  const openTimePicker = (field: 'startTime' | 'endTime') => {
     setActiveTimeField(field);
     setTempTime(timeStringToDate(form.values[field]));
     setShowTimePicker(true);
   };
 
-  const handleTimePickerChange = (event, selectedDate) => {
+  const handleTimePickerChange = (event: { type?: string } | undefined, selectedDate?: Date) => {
     if (event?.type === 'dismissed') {
       setShowTimePicker(false);
       return;
@@ -192,11 +201,11 @@ const ScheduleScreen = ({ navigation }) => {
     setShowTimePicker(false);
   };
 
-  const getDaySchedule = (dayIndex) => {
+  const getDaySchedule = (dayIndex: number) => {
     return weeklySchedule[dayIndex] || [];
   };
 
-  const renderTimeSlot = (timeSlot) => {
+  const renderTimeSlot = (timeSlot: ScheduleItem) => {
     const startMinutes = timeStringToDate('08:00').getHours() * 60;
     const endMinutes = timeStringToDate('22:00').getHours() * 60;
     const totalMinutes = endMinutes - startMinutes;
@@ -206,10 +215,14 @@ const ScheduleScreen = ({ navigation }) => {
 
     const top = ((itemStart - startMinutes) / totalMinutes) * 100;
     const height = ((itemEnd - itemStart) / totalMinutes) * 100;
-
     const backgroundColor = timeSlot.subjectId
       ? getSubjectColor(timeSlot.subjectId)
       : getActivityColor(timeSlot.activityType);
+    const slotStyle = {
+      top: `${top}%` as any,
+      height: `${Math.max(height, 8)}%` as any,
+      backgroundColor,
+    };
 
     return (
       <TouchableOpacity
@@ -217,9 +230,7 @@ const ScheduleScreen = ({ navigation }) => {
         style={[
           styles.timeSlotItem,
           {
-            top: top + '%',
-            height: Math.max(height, 8) + '%',
-            backgroundColor: backgroundColor,
+            ...slotStyle,
           },
         ]}
         onPress={() => handleEditSchedule(timeSlot)}

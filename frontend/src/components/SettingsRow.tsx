@@ -1,9 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Switch, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-const SettingsRow = ({ icon, label, value, onToggle, onPress, color, showArrow = true, style }) => {
+interface SettingsRowProps {
+  icon: any;
+  label: string;
+  value?: boolean;
+  onToggle?: (value: boolean) => void;
+  onPress?: () => void;
+  color?: string;
+  showArrow?: boolean;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const SettingsRow = ({ icon, label, value, onToggle, onPress, color, showArrow = true, style }: SettingsRowProps) => {
   const { theme } = useTheme();
   const iconColor = color || theme.primary;
 

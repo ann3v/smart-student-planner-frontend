@@ -12,9 +12,21 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/authContext';
 import { useForm } from '../hooks/useForm';
 import { Button, Input } from '../components';
+import type { StyleProp, TextStyle } from 'react-native';
 import { validateEmail } from '../utils/validation';
 
-const VerifyScreen = ({ route, navigation }) => {
+interface VerifyScreenProps {
+  route: {
+    params?: {
+      email?: string;
+    };
+  };
+  navigation: {
+    replace: (screen: string) => void;
+  };
+}
+
+const VerifyScreen = ({ route, navigation }: VerifyScreenProps) => {
   const { theme } = useTheme();
   const { verifyCode, isLoading } = useAuth();
   const prefilledEmail = route.params?.email || '';
@@ -82,7 +94,7 @@ const VerifyScreen = ({ route, navigation }) => {
               keyboardType="numeric"
               maxLength={6}
               editable={!isLoading}
-              style={styles.codeInput}
+              inputStyle={styles.codeInput}
             />
 
             <Button

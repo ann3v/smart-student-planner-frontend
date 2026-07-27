@@ -11,19 +11,26 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
-import { taskService } from '../services/api';
+import { subjectService } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useFocusRefresh } from '../hooks/useFocusRefresh';
 import { useSubjects } from '../hooks/useSubjects';
 import { useForm } from '../hooks/useForm';
 import { FAB, SubjectCard, EmptyState, ColorPicker } from '../components';
+import type { Subject } from '../types';
 
-const SubjectsScreen = ({ navigation }) => {
+interface SubjectsScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: { subjectId?: number }) => void;
+  };
+}
+
+const SubjectsScreen = ({ navigation }: SubjectsScreenProps) => {
   const { theme } = useTheme();
   const { subjects, loadSubjects } = useSubjects();
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingSubject, setEditingSubject] = useState(null);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const form = useForm({ name: '', color: '#3498db' });
 
   // Refresh subjects when screen comes into focus — no duplicate calls
@@ -103,6 +110,7 @@ const SubjectsScreen = ({ navigation }) => {
     return (
       <SubjectCard
         subject={item}
+        taskCounts={{ total: 0, completed: 0, pending: 0 }}
         onPress={() => navigation.navigate('Tasks', { subjectId: item.id })}
         onEdit={() => handleEditSubject(item)}
         onDelete={() => handleDeleteSubject(item)}

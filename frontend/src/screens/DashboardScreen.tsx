@@ -8,8 +8,8 @@ import {
   SafeAreaView,
   RefreshControl,
 } from 'react-native';
-import { useAuth } from '../context/authContext.js';
-import { useTheme } from '../context/ThemeContext.js';
+import { useAuth } from '../context/authContext';
+import { useTheme } from '../context/ThemeContext';
 import { useFocusRefresh } from '../hooks/useFocusRefresh';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { taskService, scheduleService } from '../services/api';

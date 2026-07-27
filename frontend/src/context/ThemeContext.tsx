@@ -1,8 +1,16 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
+import type { Theme, ThemeMode } from '../types';
 
-const ThemeContext = createContext();
+interface ThemeContextValue {
+  theme: Theme;
+  isDark: boolean;
+  themeMode: ThemeMode;
+  setTheme: (mode: ThemeMode) => Promise<void>;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const lightTheme = {
   // Background colors
@@ -90,10 +98,14 @@ export const darkTheme = {
   chartText: '#b8b8b8',
 };
 
-export const ThemeProvider = ({ children }) => {
+type ThemeProviderProps = {
+  children: ReactNode;
+};
+
+export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const systemColorScheme = useColorScheme();
   const [isDark, setIsDark] = useState(false);
-  const [themeMode, setThemeMode] = useState('system'); // 'light', 'dark', 'system'
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
 
   useEffect(() => {
     loadThemePreference();
@@ -109,7 +121,8 @@ export const ThemeProvider = ({ children }) => {
     try {
       const savedTheme = await AsyncStorage.getItem('theme_preference');
       if (savedTheme) {
-        const { mode } = JSON.parse(savedTheme);
+        const parsed = JSON.parse(savedTheme) as { mode?: ThemeMode };
+        const mode = parsed.mode ?? 'system';
         setThemeMode(mode);
         if (mode !== 'system') {
           setIsDark(mode === 'dark');
@@ -120,7 +133,7 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  const setTheme = async (mode) => {
+  const setTheme = async (mode: ThemeMode) => {
     try {
       setThemeMode(mode);
       if (mode === 'light') {
@@ -145,7 +158,7 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-export const useTheme = () => {
+export const useTheme = (): ThemeContextValue => {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error('useTheme must be used within ThemeProvider');

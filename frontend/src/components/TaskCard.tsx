@@ -1,11 +1,20 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { PriorityBadge, SubjectBadge } from './index';
 import { formatDateShort } from '../utils/dateUtils';
+import type { Task } from '../types';
 
-const TaskCard = ({ task, onPress, onToggleComplete, reminderCount, style }) => {
+interface TaskCardProps {
+  task: Task;
+  onPress: () => void;
+  onToggleComplete: () => void;
+  reminderCount: number;
+  style?: ViewStyle | ViewStyle[];
+}
+
+const TaskCard = ({ task, onPress, onToggleComplete, reminderCount, style }: TaskCardProps) => {
   const { theme } = useTheme();
 
   return (

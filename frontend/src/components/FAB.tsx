@@ -3,7 +3,15 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { FAB_STYLE } from '../utils/constants';
 
-const FAB = ({ icon = 'add', onPress, color = '#5A9FFF', iconColor = '#fff', iconSize = 28 }) => {
+interface FABProps {
+  icon?: any;
+  onPress: () => void;
+  color?: string;
+  iconColor?: string;
+  iconSize?: number;
+}
+
+const FAB = ({ icon = 'add', onPress, color = '#5A9FFF', iconColor = '#fff', iconSize = 28 }: FABProps) => {
   return (
     <TouchableOpacity
       style={[styles.fab, FAB_STYLE, { backgroundColor: color }]}

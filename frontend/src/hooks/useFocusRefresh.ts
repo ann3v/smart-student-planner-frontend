@@ -9,7 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 export function useFocusRefresh(
   callback: () => void | Promise<void>,
   deps: unknown[] = []
-) {
+): void {
   const hasInitiallyLoaded = useRef(false);
 
   // Initial load on mount

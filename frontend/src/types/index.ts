@@ -202,7 +202,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Verify: { email: string };
-  MainTabs: undefined;
+  MainTabs: { screen?: string; params?: { scheduleId?: number } } | undefined;
   TaskDetail: { taskId: number };
   Settings: undefined;
 };
