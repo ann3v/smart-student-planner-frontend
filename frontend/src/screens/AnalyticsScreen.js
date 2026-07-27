@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,81 +10,27 @@ import {
   RefreshControl,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import {
   LineChart,
   PieChart,
   BarChart,
 } from 'react-native-chart-kit';
-import { analyticsService } from '../services/api';
 import moment from 'moment';
 import { formatDateShort } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
+import { useFocusRefresh } from '../hooks/useFocusRefresh';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { FilterChips, StatCard, EmptyState } from '../components';
-import { TIME_RANGES, getPriorityColor } from '../utils/constants';
+import { TIME_RANGES, getChartColorByIndex } from '../utils/constants';
+import { prepareProductivityData, prepareSubjectDistributionData, prepareStudyHoursData, getPriorityDistribution } from '../utils/analyticsUtils';
 
 const AnalyticsScreen = () => {
   const { theme, isDark } = useTheme();
-  const [analytics, setAnalytics] = useState(null);
-  const [overdueTasks, setOverdueTasks] = useState([]);
-  const [workload, setWorkload] = useState({});
+  const { analytics, overdueTasks, workload, loadAnalytics } = useAnalytics();
   const [timeRange, setTimeRange] = useState('week');
   const [refreshing, setRefreshing] = useState(false);
 
   const screenWidth = Dimensions.get('window').width;
-
-  useEffect(() => {
-    loadAnalytics();
-  }, [timeRange]);
-
-  // Refresh analytics when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadAnalytics();
-    }, [timeRange])
-  );
-
-  const loadAnalytics = async () => {
-    try {
-      let startDate, endDate;
-      const today = new Date();
-
-      switch (timeRange) {
-        case 'week':
-          startDate = moment().subtract(7, 'days').toDate();
-          endDate = today;
-          break;
-        case 'month':
-          startDate = moment().subtract(30, 'days').toDate();
-          endDate = today;
-          break;
-        case 'semester':
-          startDate = moment().subtract(90, 'days').toDate();
-          endDate = today;
-          break;
-        default:
-          startDate = moment().subtract(7, 'days').toDate();
-          endDate = today;
-      }
-
-      const params = {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      };
-
-      const [analyticsRes, overdueRes, workloadRes] = await Promise.all([
-        analyticsService.getProductivityAnalytics(params),
-        analyticsService.getOverdueTasks(),
-        analyticsService.getWorkloadDistribution(),
-      ]);
-
-      setAnalytics(analyticsRes.data);
-      setOverdueTasks(overdueRes.data);
-      setWorkload(workloadRes.data);
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
-    }
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -92,101 +38,7 @@ const AnalyticsScreen = () => {
     setRefreshing(false);
   };
 
-  const prepareProductivityData = () => {
-    if (!analytics?.tasksPerDay || analytics.tasksPerDay.length === 0) {
-      return null;
-    }
-
-    const labels = analytics.tasksPerDay.map(item =>
-      moment(item.date).format('MMM D')
-    );
-    const data = analytics.tasksPerDay.map(item => {
-      const val = item.count;
-      // Prevent NaN and Infinity
-      return isFinite(val) ? val : 0;
-    });
-
-    // Only return chart data if we have valid data
-    if (!data.some(d => d > 0)) {
-      return null;
-    }
-
-    return {
-      labels,
-      datasets: [
-        {
-          data,
-          color: (opacity = 1) => `rgba(74, 144, 226, ${opacity})`,
-          strokeWidth: 2,
-        },
-      ],
-    };
-  };
-
-  const prepareSubjectDistributionData = () => {
-    if (!analytics?.tasksBySubject || analytics.tasksBySubject.length === 0) {
-      return null;
-    }
-
-    const data = analytics.tasksBySubject
-      .map((item, index) => ({
-        name: item.subjectName,
-        count: isFinite(item.count) ? Math.max(item.count, 0) : 0,
-        color: item.subjectColor || getColorByIndex(index),
-        legendFontColor: theme.textSecondary,
-        legendFontSize: 12,
-      }))
-      .filter(item => item.count > 0);
-
-    return data.length > 0 ? data : null;
-  };
-
-  const prepareStudyHoursData = () => {
-    if (!analytics?.studyHoursPerDay || analytics.studyHoursPerDay.length === 0) {
-      return null;
-    }
-
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const data = new Array(7).fill(0);
-
-    analytics.studyHoursPerDay.forEach(item => {
-      const hours = parseFloat(item.hours) || 0;
-      data[item.dayOfWeek] = isFinite(hours) ? hours : 0;
-    });
-
-    // Only return chart data if we have valid data
-    if (!data.some(d => d > 0)) {
-      return null;
-    }
-
-    return {
-      labels: days,
-      datasets: [
-        {
-          data,
-        },
-      ],
-    };
-  };
-
-  const getColorByIndex = (index) => {
-    const colors = [
-      '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
-      '#1abc9c', '#34495e', '#e67e22', '#16a085', '#8e44ad',
-    ];
-    return colors[index % colors.length];
-  };
-
-  const getPriorityDistribution = () => {
-    if (!analytics?.tasksByPriority) return null;
-    
-    const priorityData = {};
-    analytics.tasksByPriority.forEach(item => {
-      priorityData[item.priority] = item.count;
-    });
-
-    return priorityData;
-  };
+  useFocusRefresh(() => loadAnalytics(), [loadAnalytics]);
 
   const renderTimeRangeSelector = () => (
     <FilterChips
@@ -209,7 +61,6 @@ const AnalyticsScreen = () => {
 
   const renderCompletionRate = () => {
     const rate = analytics?.completionRate || 0;
-    // Prevent NaN, Infinity from displaying
     const displayRate = isFinite(rate) ? rate : 0;
 
     return (
@@ -230,8 +81,8 @@ const AnalyticsScreen = () => {
   };
 
   const renderProductivityChart = () => {
-    const data = prepareProductivityData();
-    
+    const data = prepareProductivityData(analytics);
+
     if (!data) {
       return (
         <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
@@ -276,8 +127,8 @@ const AnalyticsScreen = () => {
   };
 
   const renderSubjectDistribution = () => {
-    const data = prepareSubjectDistributionData();
-    
+    const data = prepareSubjectDistributionData(analytics, theme, getChartColorByIndex);
+
     if (!data || data.length === 0) {
       return (
         <View style={[styles.section, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
@@ -311,7 +162,7 @@ const AnalyticsScreen = () => {
   };
 
   const renderStudyHoursChart = () => {
-    const data = prepareStudyHoursData();
+    const data = prepareStudyHoursData(analytics);
     if (!data) return null;
 
     return (
@@ -338,7 +189,7 @@ const AnalyticsScreen = () => {
   };
 
   const renderPriorityDistribution = () => {
-    const priorityData = getPriorityDistribution();
+    const priorityData = getPriorityDistribution(analytics);
     if (!priorityData) return null;
 
     return (
@@ -435,7 +286,6 @@ const AnalyticsScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
         <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <Text style={[styles.title, { color: theme.text }]}>Progress Analytics</Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
@@ -443,34 +293,24 @@ const AnalyticsScreen = () => {
           </Text>
         </View>
 
-        {/* Time Range Selector */}
         {renderTimeRangeSelector()}
 
-        {/* Stats Cards */}
         {renderStatsCards()}
 
-        {/* Completion Rate */}
         {renderCompletionRate()}
 
-        {/* Productivity Chart */}
         {renderProductivityChart()}
 
-        {/* Subject Distribution */}
         {renderSubjectDistribution()}
 
-        {/* Study Hours */}
         {renderStudyHoursChart()}
 
-        {/* Priority Distribution */}
         {renderPriorityDistribution()}
 
-        {/* Overdue Tasks */}
         {renderOverdueTasks()}
 
-        {/* Workload Preview */}
         {renderWorkloadPreview()}
 
-        {/* Empty State */}
         {!analytics && (
           <EmptyState
             icon="analytics"
@@ -499,54 +339,10 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
   },
-  timeRangeSelector: {
-    flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 1,
-  },
-  timeRangeButton: {
-    flex: 1,
-    paddingVertical: 10,
-    marginHorizontal: 5,
-    borderRadius: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  activeTimeRangeButton: {
-    backgroundColor: '#5A9FFF',
-    borderColor: '#5A9FFF',
-  },
-  timeRangeButtonText: {
-    fontWeight: '500',
-  },
-  activeTimeRangeButtonText: {
-    color: '#fff',
-  },
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 15,
     paddingTop: 15,
-  },
-  statCard: {
-    flex: 1,
-    padding: 15,
-    marginHorizontal: 5,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    borderWidth: 1,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginVertical: 8,
-  },
-  statLabel: {
-    fontSize: 12,
   },
   section: {
     marginTop: 15,
@@ -668,17 +464,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#5A9FFF',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateTitle: {
-    fontSize: 24,
-    color: '#666',
-    marginTop: 20,
-    marginBottom: 10,
   },
   emptyStateContainer: {
     alignItems: 'center',
