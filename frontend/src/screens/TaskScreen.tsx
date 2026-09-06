@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -36,7 +36,7 @@ interface TasksScreenProps {
 const TasksScreen = ({ navigation }: TasksScreenProps) => {
   const { theme } = useTheme();
   const { tasks, loadTasks } = useTasks();
-  const { subjects, loadSubjects } = useSubjects();
+  const { loadSubjects } = useSubjects();
   const { reminders } = useNotifications();
   const [filter, setFilter] = useState('all'); // all, pending, completed
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,54 +49,51 @@ const TasksScreen = ({ navigation }: TasksScreenProps) => {
     dueDate: null,
   });
 
-  // Load tasks when filter changes
   const loadFilteredTasks = useCallback(() => {
     loadTasks(filter === 'all' ? undefined : { completed: filter === 'completed' });
   }, [filter, loadTasks]);
 
-  // Load subjects once on mount
   useEffect(() => {
     loadSubjects();
   }, [loadSubjects]);
 
-  // Refresh tasks when screen comes into focus — no duplicate calls
   useFocusRefresh(loadFilteredTasks, [loadFilteredTasks]);
 
-  // Build reminder map from notifications hook
-  const taskReminders: Record<number, unknown[]> = {};
-  reminders.forEach(reminder => {
-    if (reminder.taskId) {
-      if (!taskReminders[reminder.taskId]) {
-        taskReminders[reminder.taskId] = [];
+  const taskReminders = useMemo(() => {
+    const map: Record<number, unknown[]> = {};
+    reminders.forEach(reminder => {
+      if (reminder.taskId) {
+        if (!map[reminder.taskId]) {
+          map[reminder.taskId] = [];
+        }
+        map[reminder.taskId].push(reminder);
       }
-      taskReminders[reminder.taskId].push(reminder);
-    }
-  });
+    });
+    return map;
+  }, [reminders]);
 
-  const handleToggleCompletion = async (taskId: number) => {
+  const handleToggleCompletion = useCallback(async (taskId: number) => {
     try {
       await taskService.toggleTaskCompletion(taskId);
       loadFilteredTasks();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update task');
     }
-  };
+  }, [loadFilteredTasks]);
 
-  const handleDateChange = (event: { type?: string } | undefined, selectedDate?: Date) => {
+  const handleDateChange = useCallback((event: { type?: string } | undefined, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
     if (selectedDate) {
-      // Convert to ISO string for consistent storage
-      setNewTask({...newTask, dueDate: selectedDate.toISOString()});
+      setNewTask(prev => ({...prev, dueDate: selectedDate.toISOString()}));
     }
-    if (Platform.OS === 'ios' && event.type === 'set') {
+    if (Platform.OS === 'ios' && event?.type === 'set') {
       setShowDatePicker(false);
     }
-  };
+  }, []);
 
-  const handleCreateTask = async () => {
-    // Validation
+  const handleCreateTask = useCallback(async () => {
     if (!newTask.title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
       return;
@@ -116,18 +113,18 @@ const TasksScreen = ({ navigation }: TasksScreenProps) => {
       Keyboard.dismiss();
       loadFilteredTasks();
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to create task');
+      Alert.alert('Error', (error as any).response?.data?.error || 'Failed to create task');
     }
-  };
+  }, [newTask, loadFilteredTasks]);
 
-  const renderTaskItem = ({ item }: { item: Task }) => (
+  const renderTaskItem = useCallback(({ item }: { item: Task }) => (
     <TaskCard
       task={item}
       onPress={() => navigation.navigate('TaskDetail', { taskId: item.id })}
       onToggleComplete={() => handleToggleCompletion(item.id)}
       reminderCount={taskReminders[item.id]?.length || 0}
     />
-  );
+  ), [navigation, handleToggleCompletion, taskReminders]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -142,16 +139,20 @@ const TasksScreen = ({ navigation }: TasksScreenProps) => {
       <FlatList
         data={tasks}
         renderItem={renderTaskItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={useCallback((item: Task) => item.id.toString(), [])}
         contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
         style={{ backgroundColor: theme.background }}
-        ListEmptyComponent={
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        initialNumToRender={8}
+        removeClippedSubviews={true}
+        ListEmptyComponent={useMemo(() => (
           <EmptyState
             icon="assignment"
             title="No tasks found"
             subtitle="Tap + to create your first task"
           />
-        }
+        ), [])}
       />
 
       {/* Add Task Button */}

@@ -12,7 +12,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/authContext';
 import { useForm } from '../hooks/useForm';
 import { Button, Input } from '../components';
-import type { StyleProp, TextStyle } from 'react-native';
 import { validateEmail } from '../utils/validation';
 
 interface VerifyScreenProps {

@@ -31,7 +31,7 @@ export const dateToTimeString = (date: Date): string => {
 };
 
 export const checkScheduleConflict = (
-  day: number,
+  _day: number,
   start: string,
   end: string,
   daySchedules: ScheduleItem[],

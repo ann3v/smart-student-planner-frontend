@@ -1,4 +1,3 @@
-import { getChartColorByIndex, getPriorityColor } from './constants';
 import type { ProductivityAnalytics, TaskByPriority } from '../types';
 
 export const prepareProductivityData = (

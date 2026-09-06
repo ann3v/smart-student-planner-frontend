@@ -1,28 +1,20 @@
-import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosHeaders, type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import type { ApiError, AuthResponse, RegisterResponse, Task, Subject, ScheduleItem, ProductivityAnalytics, TaskFilters, ScheduleCreateInput, TaskCreateInput, TaskUpdateInput } from '../types';
+import type { AuthResponse, RegisterResponse, Task, Subject, ScheduleItem, ProductivityAnalytics, TaskFilters, ScheduleCreateInput, TaskCreateInput, TaskUpdateInput } from '../types';
 
-// API URL configuration:
-// - Android emulator uses 10.0.2.2 to reach host machine's localhost
-// - iOS simulator can use localhost directly
-// - Physical devices should use the actual machine IP or deployed server URL
-// - In production, this should be your deployed server URL
 const getDefaultApiUrl = () => {
   if (__DEV__) {
-    // Development: use appropriate local address based on platform
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:5000/api';
     }
     return 'http://localhost:5000/api';
   }
-  // Production: use deployed server URL
-  return 'https://your-production-server.com/api';
+  // Production: use EXPO_PUBLIC_API_URL env var, or fallback
+  return process.env.EXPO_PUBLIC_API_URL || 'https://your-production-server.com/api';
 };
 
-// Allow override via Expo Constants or manual config
 const API_URL = getDefaultApiUrl();
-
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -31,13 +23,19 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Allow app to react to unauthorized responses (e.g., force logout)
 let unauthorizedHandler: (() => void) | null = null;
 export const setUnauthorizedHandler = (fn: (() => void) | null) => {
   unauthorizedHandler = typeof fn === 'function' ? fn : null;
 };
 
-// Request interceptor to add token
+// Simple in-memory cache for GET requests
+const responseCache = new Map<string, { data: unknown; timestamp: number }>();
+const CACHE_TTL = 30000; // 30 seconds
+
+const getCacheKey = (config: InternalAxiosRequestConfig): string => {
+  return `${config.method}:${config.url}:${JSON.stringify(config.params || {})}`;
+};
+
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await AsyncStorage.getItem('userToken');
@@ -48,30 +46,47 @@ api.interceptors.request.use(
         config.headers = new AxiosHeaders({ Authorization: `Bearer ${token}` });
       }
     }
+
+    // Check cache for GET requests
+    if (config.method?.toLowerCase() === 'get') {
+      const cacheKey = getCacheKey(config);
+      const cached = responseCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return Promise.reject({ __cached: true, data: cached.data });
+      }
+    }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: { response?: { status?: number } }) => {
+  (response: AxiosResponse) => {
+    // Cache successful GET responses
+    if (response.config.method?.toLowerCase() === 'get') {
+      const cacheKey = getCacheKey(response.config as InternalAxiosRequestConfig);
+      responseCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
+    }
+    return response;
+  },
+  (error) => {
+    if (error.__cached) {
+      return Promise.resolve({ data: error.data });
+    }
     if (error.response?.status === 401) {
-      // Token expired or invalid
       AsyncStorage.removeItem('userToken');
       AsyncStorage.removeItem('userData');
       if (unauthorizedHandler) {
-        try {
-          unauthorizedHandler();
-        } catch {}
+        try { unauthorizedHandler(); } catch {}
       }
     }
     return Promise.reject(error);
   }
 );
+
+// Clear cache on mutations
+const clearCache = () => responseCache.clear();
 
 // Auth services
 export const authService = {
@@ -83,33 +98,33 @@ export const authService = {
 
 // Task services
 export const taskService = {
-  createTask: (taskData: TaskCreateInput) => api.post<Task>('/tasks', taskData),
+  createTask: (taskData: TaskCreateInput) => { clearCache(); return api.post<Task>('/tasks', taskData); },
   getTasks: (params?: TaskFilters) => api.get<Task[]>('/tasks', { params }),
   getTodayTasks: () => api.get<Task[]>('/tasks/today'),
   getUpcomingTasks: () => api.get<Task[]>('/tasks/upcoming'),
   getTask: (id: number) => api.get<Task>(`/tasks/${id}`),
-  updateTask: (id: number, taskData: TaskUpdateInput) => api.put<Task>(`/tasks/${id}`, taskData),
-  deleteTask: (id: number) => api.delete(`/tasks/${id}`),
-  toggleTaskCompletion: (id: number) => api.patch(`/tasks/${id}/toggle`),
+  updateTask: (id: number, taskData: TaskUpdateInput) => { clearCache(); return api.put<Task>(`/tasks/${id}`, taskData); },
+  deleteTask: (id: number) => { clearCache(); return api.delete(`/tasks/${id}`); },
+  toggleTaskCompletion: (id: number) => { clearCache(); return api.patch(`/tasks/${id}/toggle`); },
 };
 
 // Subject services
 export const subjectService = {
-  createSubject: (subjectData: Partial<Subject>) => api.post<Subject>('/subjects', subjectData),
+  createSubject: (subjectData: Partial<Subject>) => { clearCache(); return api.post<Subject>('/subjects', subjectData); },
   getSubjects: () => api.get<Subject[]>('/subjects'),
   getSubject: (id: number) => api.get<Subject>(`/subjects/${id}`),
-  updateSubject: (id: number, subjectData: Partial<Subject>) => api.put<Subject>(`/subjects/${id}`, subjectData),
-  deleteSubject: (id: number) => api.delete(`/subjects/${id}`),
+  updateSubject: (id: number, subjectData: Partial<Subject>) => { clearCache(); return api.put<Subject>(`/subjects/${id}`, subjectData); },
+  deleteSubject: (id: number) => { clearCache(); return api.delete(`/subjects/${id}`); },
 };
 
 // Schedule services
 export const scheduleService = {
-  createSchedule: (scheduleData: ScheduleCreateInput) => api.post<ScheduleItem>('/schedule', scheduleData),
+  createSchedule: (scheduleData: ScheduleCreateInput) => { clearCache(); return api.post<ScheduleItem>('/schedule', scheduleData); },
   getSchedule: (params?: Record<string, unknown>) => api.get<ScheduleItem[]>('/schedule', { params }),
   getTodaySchedule: () => api.get<ScheduleItem[]>('/schedule/today'),
   getWeeklySchedule: () => api.get<Record<string, ScheduleItem[]>>('/schedule/weekly'),
-  updateSchedule: (id: number, scheduleData: Partial<ScheduleCreateInput>) => api.put<ScheduleItem>(`/schedule/${id}`, scheduleData),
-  deleteSchedule: (id: number) => api.delete(`/schedule/${id}`),
+  updateSchedule: (id: number, scheduleData: Partial<ScheduleCreateInput>) => { clearCache(); return api.put<ScheduleItem>(`/schedule/${id}`, scheduleData); },
+  deleteSchedule: (id: number) => { clearCache(); return api.delete(`/schedule/${id}`); },
 };
 
 // Analytics services

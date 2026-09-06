@@ -1,6 +1,4 @@
-import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { DAYS_OF_WEEK } from '../utils/constants';
 

@@ -8,7 +8,6 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext';
 import { useTheme } from '../context/ThemeContext';
 import { useForm } from '../hooks/useForm';

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { subjectService } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useFocusRefresh } from '../hooks/useFocusRefresh';
@@ -106,7 +105,7 @@ const SubjectsScreen = ({ navigation }: SubjectsScreenProps) => {
     setModalVisible(true);
   };
 
-  const renderSubjectItem = ({ item }) => {
+  const renderSubjectItem = useCallback(({ item }: { item: Subject }) => {
     return (
       <SubjectCard
         subject={item}
@@ -116,7 +115,7 @@ const SubjectsScreen = ({ navigation }: SubjectsScreenProps) => {
         onDelete={() => handleDeleteSubject(item)}
       />
     );
-  };
+  }, [navigation, handleEditSubject, handleDeleteSubject]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -130,16 +129,20 @@ const SubjectsScreen = ({ navigation }: SubjectsScreenProps) => {
       <FlatList
         data={subjects}
         renderItem={renderSubjectItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={useCallback((item: Subject) => item.id.toString(), [])}
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
-        ListEmptyComponent={
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        initialNumToRender={8}
+        removeClippedSubviews={true}
+        ListEmptyComponent={useMemo(() => (
           <EmptyState
             icon="menu-book"
             title="No Subjects Yet"
             subtitle="Add your first subject to get started"
           />
-        }
+        ), [])}
       />
 
       {/* Add Button */}

@@ -1,4 +1,4 @@
-import React, { type ReactElement } from 'react';
+import React from 'react';
 import { createBottomTabNavigator, type BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -12,36 +12,40 @@ import AnalyticsScreen from '../screens/AnalyticsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const MainTabNavigator = (): ReactElement => {
+const getTabBarIcon = (routeName: string, color: string, size: number) => {
+  let iconName: 'dashboard' | 'assignment' | 'calendar-today' | 'menu-book' | 'analytics';
+
+  switch (routeName) {
+    case 'Dashboard':
+      iconName = 'dashboard';
+      break;
+    case 'Tasks':
+      iconName = 'assignment';
+      break;
+    case 'Schedule':
+      iconName = 'calendar-today';
+      break;
+    case 'Subjects':
+      iconName = 'menu-book';
+      break;
+    case 'Analytics':
+      iconName = 'analytics';
+      break;
+    default:
+      iconName = 'dashboard';
+  }
+
+  return <MaterialIcons name={iconName} size={size} color={color} />;
+};
+
+const MainTabNavigator = (): React.JSX.Element => {
   const { theme } = useTheme();
 
   return (
     <Tab.Navigator
-      id="MainTabs"
+      id="MainTabsNavigator"
       screenOptions={({ route }): BottomTabNavigationOptions => ({
-        tabBarIcon: ({ color, size }) => {
-          let iconName: 'dashboard' | 'assignment' | 'calendar-today' | 'menu-book' | 'analytics';
-
-          switch (route.name) {
-            case 'Dashboard':
-              iconName = 'dashboard';
-              break;
-            case 'Tasks':
-              iconName = 'assignment';
-              break;
-            case 'Schedule':
-              iconName = 'calendar-today';
-              break;
-            case 'Subjects':
-              iconName = 'menu-book';
-              break;
-            case 'Analytics':
-              iconName = 'analytics';
-              break;
-          }
-
-          return <MaterialIcons name={iconName} size={size} color={color} />;
-        },
+        tabBarIcon: ({ color, size }) => getTabBarIcon(route.name, color, size),
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarStyle: {

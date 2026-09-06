@@ -1,10 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   SafeAreaView,
   Dimensions,
   RefreshControl,
@@ -30,13 +29,13 @@ const AnalyticsScreen = () => {
   const [timeRange, setTimeRange] = useState('week');
   const [refreshing, setRefreshing] = useState(false);
 
-  const screenWidth = Dimensions.get('window').width;
+  const screenWidth = useMemo(() => Dimensions.get('window').width, []);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadAnalytics();
     setRefreshing(false);
-  };
+  }, [loadAnalytics]);
 
   useFocusRefresh(() => loadAnalytics(), [loadAnalytics]);
 

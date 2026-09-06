@@ -16,23 +16,16 @@ import {
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { scheduleService, taskService, subjectService } from '../services/api';
-import notificationService from '../services/notificationService';
 import { useTheme } from '../context/ThemeContext';
 import { useFocusRefresh } from '../hooks/useFocusRefresh';
 import { useSchedule } from '../hooks/useSchedule';
 import { useForm } from '../hooks/useForm';
-import { FAB, DaySelector, ScheduleBlock, EmptyState, TimePickerModal } from '../components';
-import { getActivityColor, DAYS_OF_WEEK } from '../utils/constants';
+import { FAB } from '../components';
+import { getActivityColor } from '../utils/constants';
 import { checkScheduleConflict, formatTime, timeStringToDate, dateToTimeString } from '../utils/scheduleUtils';
 import type { ActivityType, ScheduleItem, Subject, Task, ScheduleCreateInput } from '../types';
 
-interface ScheduleScreenProps {
-  navigation: {
-    navigate: (screen: string) => void;
-  };
-}
-
-const ScheduleScreen = ({ navigation }: ScheduleScreenProps) => {
+const ScheduleScreen = () => {
   const { theme } = useTheme();
   const { weeklySchedule, loadWeeklySchedule } = useSchedule();
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -61,7 +54,7 @@ const ScheduleScreen = ({ navigation }: ScheduleScreenProps) => {
 
   const loadData = useCallback(async () => {
     try {
-      const [scheduleRes, subjectsRes, tasksRes] = await Promise.all([
+      const [, subjectsRes, tasksRes] = await Promise.all([
         scheduleService.getWeeklySchedule(),
         subjectService.getSubjects(),
         taskService.getTasks({ completed: false }),

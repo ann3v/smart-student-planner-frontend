@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Task, Subject, TaskPriority, NotificationReminder } from '../types';
 import {
   View,
@@ -11,16 +11,14 @@ import {
   TextInput,
   Modal,
   Platform,
-  Switch,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { taskService, subjectService } from '../services/api';
 import notificationService from '../services/notificationService';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { formatDate, formatDateShort, parseDate } from '../utils/dateUtils';
+import { parseDate } from '../utils/dateUtils';
 import { useTheme } from '../context/ThemeContext';
-import { PriorityBadge, SubjectBadge, ConfirmDialog } from '../components';
 import { getPriorityColor } from '../utils/constants';
 
 interface TaskDetailScreenProps {
@@ -45,7 +43,6 @@ const TaskDetailScreen = ({ route, navigation }: TaskDetailScreenProps) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [taskReminders, setTaskReminders] = useState<NotificationReminder[]>([]);
-  const [reminderMinutes, setReminderMinutes] = useState('30');
 
   const REMINDER_OPTIONS = [
     { label: '5 minutes', value: 5 },
@@ -56,73 +53,66 @@ const TaskDetailScreen = ({ route, navigation }: TaskDetailScreenProps) => {
     { label: 'Custom', value: 'custom' }
   ];
 
-  useEffect(() => {
-    loadTask();
-    loadSubjects();
-    loadTaskReminders();
-  }, []);
-
-  // Refresh task details and reminders when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadTask();
+      loadSubjects();
       loadTaskReminders();
     }, [taskId])
   );
 
-  const loadTask = async () => {
+  const loadTask = useCallback(async () => {
     try {
       const response = await taskService.getTask(taskId);
       setTask(response.data);
       setEditedTask(response.data);
-    } catch (error) {
-      console.error('Failed to load task:', error);
+    } catch {
       Alert.alert('Error', 'Failed to load task details');
     }
-  };
+  }, [taskId]);
 
-  const loadSubjects = async () => {
+  const loadSubjects = useCallback(async () => {
     try {
       const response = await subjectService.getSubjects();
       setSubjects(response.data);
-    } catch (error) {
-      console.error('Failed to load subjects:', error);
+    } catch {
+      // Subjects load failed silently
     }
-  };
+  }, []);
 
-  const loadTaskReminders = async () => {
+  const loadTaskReminders = useCallback(async () => {
     try {
       const reminders = await notificationService.getTaskReminders(taskId);
       setTaskReminders(reminders);
-    } catch (error) {
-      console.error('Failed to load reminders:', error);
+    } catch {
+      // Reminders load failed silently
     }
-  };
+  }, [taskId]);
 
-  const handleToggleCompletion = async () => {
+  const handleToggleCompletion = useCallback(async () => {
     try {
       await taskService.toggleTaskCompletion(taskId);
-      loadTask(); // Reload to get updated task
-    } catch (error) {
+      loadTask();
+    } catch {
       Alert.alert('Error', 'Failed to update task');
     }
-  };
+  }, [taskId, loadTask]);
 
-  const handleUpdateTask = async () => {
+  const handleUpdateTask = useCallback(async () => {
     try {
       await taskService.updateTask(taskId, editedTask);
       setIsEditing(false);
       Alert.alert('Success', 'Task updated successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update task');
     }
-  };
+  }, [taskId, editedTask, navigation]);
 
-  const handleScheduleReminder = async (minutes) => {
+  const handleScheduleReminder = useCallback(async (minutes: number) => {
     try {
-      if (!task.dueDate) {
+      if (!task?.dueDate) {
         Alert.alert('Error', 'Please set a due date before scheduling a reminder');
         return;
       }
@@ -142,23 +132,22 @@ const TaskDetailScreen = ({ route, navigation }: TaskDetailScreenProps) => {
       } else {
         Alert.alert('Error', 'Failed to schedule reminder');
       }
-    } catch (error) {
-      console.error('Error scheduling reminder:', error);
+    } catch {
       Alert.alert('Error', 'Failed to schedule reminder');
     }
-  };
+  }, [taskId, task, loadTaskReminders]);
 
-  const handleCancelReminder = async (reminderId) => {
+  const handleCancelReminder = useCallback(async (reminderId: string) => {
     try {
       await notificationService.cancelReminder(reminderId);
       await loadTaskReminders();
       Alert.alert('Success', 'Reminder cancelled');
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to cancel reminder');
     }
-  };
+  }, [loadTaskReminders]);
 
-  const handleDeleteTask = () => {
+  const handleDeleteTask = useCallback(() => {
     Alert.alert(
       'Delete Task',
       'Are you sure you want to delete this task?',
@@ -171,14 +160,14 @@ const TaskDetailScreen = ({ route, navigation }: TaskDetailScreenProps) => {
             try {
               await taskService.deleteTask(taskId);
               navigation.goBack();
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete task');
             }
           },
         },
       ]
     );
-  };
+  }, [taskId, navigation]);
 
   const getSubjectColor = (subjectId?: number | null) => {
     const subject = subjects.find(s => s.id === subjectId);
@@ -539,7 +528,7 @@ const TaskDetailScreen = ({ route, navigation }: TaskDetailScreenProps) => {
                             // Handle custom reminder
                             setShowReminderModal(false);
                           } else {
-                            handleScheduleReminder(option.value);
+                            handleScheduleReminder(option.value as number);
                           }
                         }}
                       >

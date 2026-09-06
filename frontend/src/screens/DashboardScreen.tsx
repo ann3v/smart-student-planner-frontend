@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -35,29 +35,73 @@ const DashboardScreen = ({ navigation }) => {
       setTodayTasks(tasksRes.data);
       setTodaySchedule(scheduleRes.data);
       loadAnalytics();
-    } catch (error) {
+    } catch {
       // Error handled silently — UI shows empty states
     }
   }, [loadAnalytics]);
 
-  // Single hook replaces both useEffect([]) and useFocusEffect — no duplicate calls
   useFocusRefresh(loadData, [loadData]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  };
+  }, [loadData]);
 
-  const getDayName = () => {
+  const getDayName = useCallback(() => {
     return DAYS_OF_WEEK[new Date().getDay()];
-  };
+  }, []);
 
-  const stats = analytics?.stats || {
+  const stats = useMemo(() => analytics?.stats || {
     totalTasks: 0,
     completedTasks: 0,
     pendingTasks: 0,
-  };
+  }, [analytics]);
+
+  const handleNavigate = useCallback((screen: string, params?: Record<string, unknown>) => {
+    navigation.navigate(screen, params);
+  }, [navigation]);
+
+  const todayDateStr = useMemo(() => {
+    return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }, []);
+
+  const renderTaskItem = useCallback((task: any) => (
+    <TouchableOpacity
+      key={task.id}
+      style={[styles.taskItem, { backgroundColor: theme.background, borderColor: theme.border }]}
+      onPress={() => handleNavigate('TaskDetail', { taskId: task.id })}
+    >
+      <View style={styles.taskContent}>
+        <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
+        <View style={styles.taskInfo}>
+          <Text style={[styles.taskTitle, { color: theme.text }]}>{task.title}</Text>
+          {task.Subject && (
+            <Text style={[styles.taskSubject, { color: theme.textSecondary }]}>{task.Subject.name}</Text>
+          )}
+        </View>
+        <MaterialIcons
+          name={task.completed ? 'check-circle' : 'radio-button-unchecked'}
+          size={24}
+          color={task.completed ? theme.success : theme.textTertiary}
+        />
+      </View>
+    </TouchableOpacity>
+  ), [theme, handleNavigate]);
+
+  const renderScheduleItem = useCallback((item: any) => (
+    <View key={item.id} style={[styles.scheduleItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
+      <View style={styles.timeContainer}>
+        <Text style={[styles.timeText, { color: theme.primary }]}>{item.startTime}</Text>
+        <Text style={[styles.timeText, { color: theme.textTertiary }]}>to</Text>
+        <Text style={[styles.timeText, { color: theme.primary }]}>{item.endTime}</Text>
+      </View>
+      <View style={styles.scheduleContent}>
+        <Text style={[styles.scheduleTitle, { color: theme.text }]}>{item.title}</Text>
+        <Text style={[styles.scheduleType, { color: theme.textSecondary }]}>{item.activityType}</Text>
+      </View>
+    </View>
+  ), [theme]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -72,9 +116,9 @@ const DashboardScreen = ({ navigation }) => {
         <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
           <View>
             <Text style={[styles.greeting, { color: theme.text }]}>Hello, {user?.name || 'Student'}!</Text>
-            <Text style={[styles.date, { color: theme.textSecondary }]}>{getDayName()}, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+            <Text style={[styles.date, { color: theme.textSecondary }]}>{getDayName()}, {todayDateStr}</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <TouchableOpacity onPress={() => handleNavigate('Settings')}>
             <MaterialIcons name="settings" size={24} color={theme.primary} />
           </TouchableOpacity>
         </View>
@@ -92,28 +136,28 @@ const DashboardScreen = ({ navigation }) => {
           <View style={styles.actionsGrid}>
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: theme.background }]}
-              onPress={() => navigation.navigate('Tasks')}
+              onPress={() => handleNavigate('Tasks')}
             >
               <MaterialIcons name="assignment" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Tasks</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: theme.background }]}
-              onPress={() => navigation.navigate('Schedule')}
+              onPress={() => handleNavigate('Schedule')}
             >
               <MaterialIcons name="calendar-today" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Schedule</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: theme.background }]}
-              onPress={() => navigation.navigate('Subjects')}
+              onPress={() => handleNavigate('Subjects')}
             >
               <MaterialIcons name="menu-book" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Subjects</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: theme.background }]}
-              onPress={() => navigation.navigate('Analytics')}
+              onPress={() => handleNavigate('Analytics')}
             >
               <MaterialIcons name="analytics" size={30} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>Analytics</Text>
@@ -126,7 +170,7 @@ const DashboardScreen = ({ navigation }) => {
           <SectionHeader
             title="Today's Tasks"
             actionLabel="See All"
-            onAction={() => navigation.navigate('Tasks')}
+            onAction={() => handleNavigate('Tasks')}
           />
           
           {todayTasks.length === 0 ? (
@@ -136,28 +180,7 @@ const DashboardScreen = ({ navigation }) => {
               subtitle="Tap + to create your first task"
             />
           ) : (
-            todayTasks.slice(0, 3).map(task => (
-              <TouchableOpacity
-                key={task.id}
-                style={[styles.taskItem, { backgroundColor: theme.background, borderColor: theme.border }]}
-                onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
-              >
-                <View style={styles.taskContent}>
-                  <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
-                  <View style={styles.taskInfo}>
-                    <Text style={[styles.taskTitle, { color: theme.text }]}>{task.title}</Text>
-                    {task.Subject && (
-                      <Text style={[styles.taskSubject, { color: theme.textSecondary }]}>{task.Subject.name}</Text>
-                    )}
-                  </View>
-                  <MaterialIcons
-                    name={task.completed ? 'check-circle' : 'radio-button-unchecked'}
-                    size={24}
-                    color={task.completed ? theme.success : theme.textTertiary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
+            todayTasks.slice(0, 3).map(renderTaskItem)
           )}
         </View>
 
@@ -166,7 +189,7 @@ const DashboardScreen = ({ navigation }) => {
           <SectionHeader
             title="Today's Schedule"
             actionLabel="See All"
-            onAction={() => navigation.navigate('Schedule')}
+            onAction={() => handleNavigate('Schedule')}
           />
           
           {todaySchedule.length === 0 ? (
@@ -176,19 +199,7 @@ const DashboardScreen = ({ navigation }) => {
               subtitle="Add your classes and study sessions"
             />
           ) : (
-            todaySchedule.slice(0, 3).map(item => (
-              <View key={item.id} style={[styles.scheduleItem, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                <View style={styles.timeContainer}>
-                  <Text style={[styles.timeText, { color: theme.primary }]}>{item.startTime}</Text>
-                  <Text style={[styles.timeText, { color: theme.textTertiary }]}>to</Text>
-                  <Text style={[styles.timeText, { color: theme.primary }]}>{item.endTime}</Text>
-                </View>
-                <View style={styles.scheduleContent}>
-                  <Text style={[styles.scheduleTitle, { color: theme.text }]}>{item.title}</Text>
-                  <Text style={[styles.scheduleType, { color: theme.textSecondary }]}>{item.activityType}</Text>
-                </View>
-              </View>
-            ))
+            todaySchedule.slice(0, 3).map(renderScheduleItem)
           )}
         </View>
       </ScrollView>

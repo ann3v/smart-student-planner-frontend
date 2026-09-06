@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Switch,
   Alert,
   Modal,
 } from 'react-native';
@@ -16,19 +15,11 @@ import { useAuth } from '../context/authContext';
 import { useTheme } from '../context/ThemeContext';
 import notificationService from '../services/notificationService';
 import { SettingsRow, ThemeSelector, Button, Input } from '../components';
-import type { ViewStyle, TextStyle } from 'react-native';
 import { useForm } from '../hooks/useForm';
 
-interface SettingsScreenProps {
-  navigation: {
-    navigate: (screen: string) => void;
-    goBack: () => void;
-  };
-}
-
-const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
+const SettingsScreen = () => {
   const { user, logout } = useAuth();
-  const { theme, isDark, themeMode, setTheme } = useTheme();
+  const { theme } = useTheme();
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: false,
@@ -36,7 +27,6 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
     taskReminders: true,
     studyReminders: true,
   });
-  const [notificationSettings, setNotificationSettings] = useState<Record<string, unknown> | null>(null);
   const [remindersCount, setRemindersCount] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -54,48 +44,43 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      try {
+        const savedSettings = await AsyncStorage.getItem('appSettings');
+        if (savedSettings && isMounted) {
+          setSettings(JSON.parse(savedSettings));
+        }
+      } catch {
+        // Settings load failed silently
+      }
+    };
+
+    const loadNotificationSettings = async () => {
+      try {
+        const count = await notificationService.getRemindersCount();
+        if (isMounted) setRemindersCount(count);
+      } catch {
+        // Notification settings load failed silently
+      }
+    };
+
     loadSettings();
     loadNotificationSettings();
+
+    return () => { isMounted = false; };
   }, []);
 
-  const loadSettings = async () => {
-    try {
-      const savedSettings = await AsyncStorage.getItem('appSettings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
-      }
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-    }
-  };
+  const handleToggleSetting = useCallback((setting: keyof typeof settings) => {
+    setSettings(prev => {
+      const newSettings = { ...prev, [setting]: !prev[setting] };
+      AsyncStorage.setItem('appSettings', JSON.stringify(newSettings)).catch(() => {});
+      return newSettings;
+    });
+  }, []);
 
-  const loadNotificationSettings = async () => {
-    try {
-      const notifSettings = await notificationService.getNotificationSettings();
-      setNotificationSettings(notifSettings);
-      
-      const count = await notificationService.getRemindersCount();
-      setRemindersCount(count);
-    } catch (error) {
-      console.error('Failed to load notification settings:', error);
-    }
-  };
-
-  const saveSettings = async (newSettings: typeof settings) => {
-    try {
-      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
-      setSettings(newSettings);
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-    }
-  };
-
-  const handleToggleSetting = (setting: keyof typeof settings) => {
-    const newSettings = { ...settings, [setting]: !settings[setting] };
-    saveSettings(newSettings);
-  };
-
-  const handleUpdateProfile = async () => {
+  const handleUpdateProfile = useCallback(async () => {
     if (!profileForm.values.name.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
@@ -108,12 +93,12 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
       }));
       setShowProfileModal(false);
       Alert.alert('Success', 'Profile updated successfully');
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update profile');
     }
-  };
+  }, [user, profileForm.values.name]);
 
-  const handleChangePassword = async () => {
+  const handleChangePassword = useCallback(async () => {
     if (!passwordForm.values.currentPassword || !passwordForm.values.newPassword) {
       Alert.alert('Error', 'Please fill in all password fields');
       return;
@@ -133,12 +118,12 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
       Alert.alert('Success', 'Password changed successfully');
       setShowPasswordModal(false);
       passwordForm.reset();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to change password');
     }
-  };
+  }, [passwordForm]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
@@ -153,9 +138,9 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
         },
       ]
     );
-  };
+  }, [logout]);
 
-  const handleClearData = () => {
+  const handleClearData = useCallback(() => {
     Alert.alert(
       'Clear All Data',
       'This will delete all your tasks, subjects, and schedule. This action cannot be undone.',
@@ -167,22 +152,22 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
           onPress: async () => {
             try {
               Alert.alert('Success', 'All data has been cleared');
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to clear data');
             }
           },
         },
       ]
     );
-  };
+  }, []);
 
-  const renderSettingItem = (icon: string, label: string, value: boolean, onToggle: () => void) => (
+  const renderSettingItem = useCallback((icon: string, label: string, value: boolean, onToggle: () => void) => (
     <SettingsRow icon={icon} label={label} value={value} onToggle={onToggle} />
-  );
+  ), []);
 
-  const renderActionItem = (icon: string, label: string, onPress: () => void, color?: string, showArrow = true) => (
+  const renderActionItem = useCallback((icon: string, label: string, onPress: () => void, color?: string, showArrow = true) => (
     <SettingsRow icon={icon} label={label} onPress={onPress} color={color} showArrow={showArrow} />
-  );
+  ), []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>

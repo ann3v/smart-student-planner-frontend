@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUnauthorizedHandler(() => {
       logout();
     });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   return (

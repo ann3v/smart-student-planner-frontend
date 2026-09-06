@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
-import { createStackNavigator, type StackNavigationProp } from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/context/authContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,7 +26,7 @@ type RootNavigatorProps = {
   setUserToken: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-function RootNavigator({ userToken }: RootNavigatorProps) {
+const RootNavigator = React.memo(function RootNavigator({ userToken }: RootNavigatorProps) {
   return (
     <Stack.Navigator
       id="RootStack"
@@ -108,7 +108,7 @@ function RootNavigator({ userToken }: RootNavigatorProps) {
       )}
     </Stack.Navigator>
   );
-}
+});
 
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
@@ -119,18 +119,16 @@ function AppContent() {
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
-    // Request notification permissions and setup listeners
+    let isMounted = true;
+
     const setupNotifications = async () => {
       try {
-        // Request permissions
         await notificationService.requestPermissions();
 
-        // Set up notification event listeners
-        notificationListener.current = Notifications.addNotificationReceivedListener(() => {
-          // Handle notification received while app is in foreground
-        });
+        notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+          if (!isMounted) return;
           const data = response.notification.request.content.data as
             | { type?: string; taskId?: number; scheduleId?: number }
             | undefined;
@@ -144,55 +142,60 @@ function AppContent() {
             } as never);
           }
         });
-      } catch (error) {
+      } catch {
         // Notification setup failed — app continues without notifications
       }
     };
 
     setupNotifications();
 
-    // Cleanup listeners
     return () => {
-      if (notificationListener.current && 'removeNotificationSubscription' in Notifications) {
-        (Notifications as typeof Notifications & { removeNotificationSubscription?: (subscription: Notifications.Subscription) => void }).removeNotificationSubscription?.(notificationListener.current);
+      isMounted = false;
+      if (notificationListener.current) {
+        (Notifications as any).removeNotificationSubscription?.(notificationListener.current);
       }
-      if (responseListener.current && 'removeNotificationSubscription' in Notifications) {
-        (Notifications as typeof Notifications & { removeNotificationSubscription?: (subscription: Notifications.Subscription) => void }).removeNotificationSubscription?.(responseListener.current);
+      if (responseListener.current) {
+        (Notifications as any).removeNotificationSubscription?.(responseListener.current);
       }
     };
   }, []);
 
   useEffect(() => {
-    // Check if user is logged in
+    let isMounted = true;
+
     const bootstrapAsync = async () => {
       try {
         const token = await AsyncStorage.getItem('userToken');
-        setUserToken(token);
-        // Attempt to load user data if present
-        await loadUser();
+        if (isMounted) setUserToken(token);
+        if (token) {
+          await loadUser();
+        }
       } catch (e) {
         // Token load failed — user will see login screen
-        console.error('Failed to load token', e);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     bootstrapAsync();
+
+    return () => { isMounted = false; };
   }, []);
 
-  // Update userToken when user logs in/out
   useEffect(() => {
+    let isMounted = true;
+
     const syncTokenWithUser = async () => {
       if (user) {
         const token = await AsyncStorage.getItem('userToken');
-        setUserToken(token);
+        if (isMounted) setUserToken(token);
       } else {
-        // If user is logged out, clear token state to show auth screens
         setUserToken(null);
       }
     };
     syncTokenWithUser();
+
+    return () => { isMounted = false; };
   }, [user]);
 
   if (isLoading) {
